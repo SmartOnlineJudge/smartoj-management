@@ -4,8 +4,8 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/dashboard',
-      name: 'dashboard',
+      path: '/',
+      name: 'index',
       component: () => import('../pages/Dashboard.vue')
     },
     {

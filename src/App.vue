@@ -1,5 +1,8 @@
 <template>
-  <a-layout style="min-height: 100vh">
+  <!-- 判断登录状态  -->
+  <div v-if="isLogin === null"></div>
+  <!-- 管理员已登录  -->
+  <a-layout v-else-if="isLogin" style="min-height: 100vh">
     <a-layout-header>
       <div class="logo">
         <img src="/favicon.svg" alt="favicon.svg" width="41">
@@ -8,12 +11,23 @@
       <div class="avatar">
         <a-dropdown placement="bottom">
           <div class="user-info">
-            <a-avatar src="/favicon.svg"></a-avatar>
-            <span class="username">admin</span>
+            <a-avatar :src="MINIO_URL + currentAdmin.avatar"></a-avatar>
+            <span class="username">{{ currentAdmin.name }}</span>
           </div>
           <template #overlay>
             <a-menu>
-              <a-menu-item>退出登录</a-menu-item>
+              <a-menu-item>
+                <span>
+                  <ProfileOutlined />
+                  <span>个人中心</span>
+                </span>
+              </a-menu-item>
+              <a-menu-item @click="logout">
+                <span>
+                  <DeleteOutlined />
+                  <span>退出登录</span>
+                </span>
+              </a-menu-item>
             </a-menu>
           </template>
         </a-dropdown>
@@ -24,10 +38,10 @@
         <a-menu
             mode="inline"
             :style="{ height: '100%', borderRight: 0 }"
-            @click="onClickMenuItem"
-            :selectedKeys="selectedKeys"
+            @click="item => router.push(item.key)"
+            :selectedKeys="[$route.path]"
         >
-          <a-menu-item key="/dashboard">
+          <a-menu-item key="/">
             <span>
               <DashboardOutlined/>
               <span>系统概览</span>
@@ -80,24 +94,83 @@
       </a-layout-content>
     </a-layout>
   </a-layout>
+  <!-- 管理员未登录  -->
+  <div v-else class="login-box">
+    <Login @onLoginSuccess="onLoginSuccess"/>
+  </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onBeforeMount } from "vue"
 import { RouterView } from 'vue-router'
 import {
   DashboardOutlined,
   UserOutlined,
   CodeOutlined,
   CommentOutlined,
-  CarryOutOutlined
+  CarryOutOutlined,
+  DeleteOutlined,
+  ProfileOutlined
 } from "@ant-design/icons-vue";
+import { message, Modal } from 'ant-design-vue';
 import router from "@/router/index.js";
+import Login from "@/pages/Login.vue";
+import { userLogout, getCurrentAdmin } from "@/request.js";
 
-const selectedKeys = ref(['/dashboard'])
-const onClickMenuItem = item => {
-  selectedKeys.value = [item.key]
-  router.push(item.key)
+let currentAdmin, timer
+const isLogin = ref(null)
+const MINIO_URL = import.meta.env.VITE_MINIO_URL
+
+const checkLoginStatus = async () => {
+  try {
+    await getCurrentAdmin()
+  } catch {
+    Modal.warning({
+      title: '警告',
+      content: '当前登录状态失效，请重新登录',
+      onOk() {
+        isLogin.value = false
+        clearInterval(timer)
+      },
+      okText: '确认',
+    })
+  }
+}
+
+onBeforeMount(async () => {
+  try {
+    const response = await getCurrentAdmin()
+    currentAdmin = response.data.data
+    isLogin.value = true
+    timer = setInterval(checkLoginStatus, 1000 * 60)
+  } catch {
+    isLogin.value = false
+  }
+})
+
+const onLoginSuccess = () => {
+  message.success("登录成功，页面正在跳转……", 0.8)
+  setTimeout(async () => {
+    const response = await getCurrentAdmin()
+    currentAdmin = response.data.data
+    isLogin.value = true
+    timer = setInterval(checkLoginStatus, 1000 * 60)
+  }, 1000)
+}
+
+const logout = async () => {
+  Modal.confirm({
+    title: '警告',
+    content: '是否退出登录？',
+    onOk() {
+      clearInterval(timer)
+      return userLogout().then(() => {
+        isLogin.value = false
+      })
+    },
+    okText: '确认',
+    cancelText: '取消',
+  })
 }
 </script>
 
@@ -123,5 +196,9 @@ const onClickMenuItem = item => {
   font-size: 18px;
   margin-left: 6px;
   color: #999
+}
+.login-box {
+  margin: 140px auto 0 auto;
+  width: 18%;
 }
 </style>
