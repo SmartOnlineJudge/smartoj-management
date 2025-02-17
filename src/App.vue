@@ -1,6 +1,10 @@
 <template>
   <!-- 判断登录状态  -->
-  <div v-if="isLogin === null"></div>
+  <div v-if="isLogin === null">
+    <a-spin :spinning="spinning" tip="正在检查登录状态……">
+      <div style="width: 100vw;height: 100vh"></div>
+    </a-spin>
+  </div>
   <!-- 管理员已登录  -->
   <a-layout v-else-if="isLogin" style="min-height: 100vh">
     <a-layout-header>
@@ -118,6 +122,7 @@ import Login from "@/pages/Login.vue";
 import { userLogout, getCurrentAdmin } from "@/request.js";
 
 let currentAdmin, timer
+const spinning = ref(true)
 const isLogin = ref(null)
 const MINIO_URL = import.meta.env.VITE_MINIO_URL
 
@@ -125,12 +130,12 @@ const checkLoginStatus = async () => {
   try {
     await getCurrentAdmin()
   } catch {
+    clearInterval(timer)  // 优先移除定时器，不然如果用户不点击确认，定时器将会一直存在
     Modal.warning({
       title: '警告',
-      content: '当前登录状态失效，请重新登录',
+      content: '当前登录状态已失效，请重新登录',
       onOk() {
         isLogin.value = false
-        clearInterval(timer)
       },
       okText: '确认',
     })
@@ -145,6 +150,8 @@ onBeforeMount(async () => {
     timer = setInterval(checkLoginStatus, 1000 * 60)
   } catch {
     isLogin.value = false
+  } finally {
+    spinning.value = false
   }
 })
 

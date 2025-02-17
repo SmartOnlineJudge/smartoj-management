@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
+import NProgress from 'nprogress'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -39,6 +40,15 @@ const router = createRouter({
       component: () => import('../pages/question/DailyQuestion.vue')
     },
   ]
+})
+
+router.beforeEach((to, from, next) => {
+  NProgress.start()
+  next()
+})
+
+router.afterEach(() => {
+  NProgress.done()
 })
 
 export default router
