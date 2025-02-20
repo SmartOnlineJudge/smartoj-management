@@ -39,6 +39,11 @@ const router = createRouter({
       name: 'daily-question',
       component: () => import('../pages/question/DailyQuestion.vue')
     },
+    {
+      path: '/user-center',
+      name: 'user-center',
+      component: () => import('../pages/UserCenter.vue')
+    }
   ]
 })
 

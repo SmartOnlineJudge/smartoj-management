@@ -6,14 +6,14 @@ export const requests = axios.create({
 })
 
 
-export function adminLogin(email, password) {
+export const adminLogin = (email, password) => {
   return requests.post('/management/login', {email: email, password: password, auth_type: "password"})
 }
 
-export function userLogout() {
+export const userLogout = () => {
   return requests.post('/management/logout')
 }
 
-export function getCurrentAdmin() {
+export const getCurrentAdmin = () => {
   return requests.get('/management/admin')
 }

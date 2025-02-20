@@ -19,16 +19,16 @@
             <span class="username">{{ currentAdmin.name }}</span>
           </div>
           <template #overlay>
-            <a-menu>
-              <a-menu-item>
+            <a-menu @click="item => router.push(item.key)">
+              <a-menu-item key="/user-center">
                 <span>
-                  <ProfileOutlined />
+                  <IdcardOutlined />
                   <span>个人中心</span>
                 </span>
               </a-menu-item>
               <a-menu-item @click="logout">
                 <span>
-                  <DeleteOutlined />
+                  <LogoutOutlined />
                   <span>退出登录</span>
                 </span>
               </a-menu-item>
@@ -91,9 +91,15 @@
             </template>
             <a-menu-item key="10">option9</a-menu-item>
           </a-sub-menu>
+          <a-menu-item key="/user-center">
+            <span>
+              <IdcardOutlined/>
+              <span>账号管理</span>
+            </span>
+          </a-menu-item>
         </a-menu>
       </a-layout-sider>
-      <a-layout-content>
+      <a-layout-content style="padding: 25px 30px">
         <RouterView/>
       </a-layout-content>
     </a-layout>
@@ -113,18 +119,21 @@ import {
   CodeOutlined,
   CommentOutlined,
   CarryOutOutlined,
-  DeleteOutlined,
-  ProfileOutlined
+  LogoutOutlined,
+  IdcardOutlined
 } from "@ant-design/icons-vue";
 import { message, Modal } from 'ant-design-vue';
 import router from "@/router/index.js";
 import Login from "@/pages/Login.vue";
 import { userLogout, getCurrentAdmin } from "@/request.js";
+import { useUserStore } from "@/stores.js";
 
 let currentAdmin, timer
 const spinning = ref(true)
 const isLogin = ref(null)
+const checkFrequency = 2000  // 登录状态检查频率
 const MINIO_URL = import.meta.env.VITE_MINIO_URL
+const userStore = useUserStore();
 
 const checkLoginStatus = async () => {
   try {
@@ -146,8 +155,9 @@ onBeforeMount(async () => {
   try {
     const response = await getCurrentAdmin()
     currentAdmin = response.data.data
+    userStore.setUser(currentAdmin)
     isLogin.value = true
-    timer = setInterval(checkLoginStatus, 1000 * 60)
+    timer = setInterval(checkLoginStatus, checkFrequency)
   } catch {
     isLogin.value = false
   } finally {
@@ -160,8 +170,9 @@ const onLoginSuccess = () => {
   setTimeout(async () => {
     const response = await getCurrentAdmin()
     currentAdmin = response.data.data
+    userStore.setUser(currentAdmin)
     isLogin.value = true
-    timer = setInterval(checkLoginStatus, 1000 * 60)
+    timer = setInterval(checkLoginStatus, checkFrequency)
   }, 1000)
 }
 
