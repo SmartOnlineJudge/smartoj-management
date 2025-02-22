@@ -13,11 +13,22 @@
         <h2 style="padding-left: 8px">后台管理界面</h2>
       </div>
       <div class="avatar">
-        <a-dropdown placement="bottom">
-          <div class="user-info">
-            <a-avatar :src="MINIO_URL + userStore.user.avatar"></a-avatar>
-            <span class="username">{{ userStore.user.name }}</span>
-          </div>
+        <a-menu :selectable="false" style="border-inline-end: none">
+          <a-menu-item @click="() => {openDropdown = true}">
+            <div class="user-info">
+              <a-avatar :src="MINIO_URL + userStore.user.avatar"></a-avatar>
+              <span class="username">{{ userStore.user.name }}</span>
+            </div>
+          </a-menu-item>
+        </a-menu>
+        <a-dropdown
+            placement="bottom"
+            :trigger="['click', 'hover']"
+            v-model:open="openDropdown"
+            :align="{ offset: [85,  0] }"
+            arrow
+        >
+          <div style="width: 0; height: 0; opacity: 0"></div>
           <template #overlay>
             <a-menu @click="item => router.push(item.key)">
               <a-menu-item key="/user-center">
@@ -129,6 +140,7 @@ import { userLogout, getCurrentAdmin } from "@/request.js";
 import { useUserStore } from "@/stores.js";
 
 let currentAdmin, timer
+const openDropdown = ref(false)
 const spinning = ref(true)
 const isLogin = ref(null)
 const checkFrequency = 2000  // 登录状态检查频率
@@ -201,7 +213,11 @@ const logout = async () => {
   display: flex;
   align-items: center;
   background: #fff;
-  border-bottom: 1px solid #dcdcdc
+  border-bottom: 1px solid #dcdcdc;
+  padding-inline: 20px;
+}
+.ant-dropdown-menu-item .anticon {
+  margin-right: 8px;  /* 图标右侧留出 8px 空隙 */
 }
 .logo {
   display: flex;
@@ -210,11 +226,15 @@ const logout = async () => {
 .avatar {
   margin-left: auto;
 }
+.avatar .user-info {
+  display: flex;
+  align-items: center;
+}
 .avatar .user-info:hover {
   cursor: pointer;
 }
 .avatar .username {
-  font-size: 18px;
+  font-size: 17px;
   margin-left: 6px;
   color: #999
 }
