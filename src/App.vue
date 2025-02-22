@@ -15,8 +15,8 @@
       <div class="avatar">
         <a-dropdown placement="bottom">
           <div class="user-info">
-            <a-avatar :src="MINIO_URL + currentAdmin.avatar"></a-avatar>
-            <span class="username">{{ currentAdmin.name }}</span>
+            <a-avatar :src="MINIO_URL + userStore.user.avatar"></a-avatar>
+            <span class="username">{{ userStore.user.name }}</span>
           </div>
           <template #overlay>
             <a-menu @click="item => router.push(item.key)">
@@ -99,7 +99,7 @@
           </a-menu-item>
         </a-menu>
       </a-layout-sider>
-      <a-layout-content style="padding: 25px 30px">
+      <a-layout-content style="padding: 20px 25px">
         <RouterView/>
       </a-layout-content>
     </a-layout>
@@ -137,7 +137,9 @@ const userStore = useUserStore();
 
 const checkLoginStatus = async () => {
   try {
-    await getCurrentAdmin()
+    const response = await getCurrentAdmin()
+    // 用新的用户对象与旧的用户对象比较，如果某个属性不一致，则更新这个属性
+    userStore.compareAndUpdate(response.data.data)
   } catch {
     clearInterval(timer)  // 优先移除定时器，不然如果用户不点击确认，定时器将会一直存在
     Modal.warning({
@@ -165,15 +167,15 @@ onBeforeMount(async () => {
   }
 })
 
-const onLoginSuccess = () => {
+const onLoginSuccess = async () => {
   message.success("登录成功，页面正在跳转……", 0.8)
-  setTimeout(async () => {
-    const response = await getCurrentAdmin()
+  setTimeout(() => {
     currentAdmin = response.data.data
     userStore.setUser(currentAdmin)
     isLogin.value = true
     timer = setInterval(checkLoginStatus, checkFrequency)
   }, 1000)
+  const response = await getCurrentAdmin()
 }
 
 const logout = async () => {
@@ -184,6 +186,7 @@ const logout = async () => {
       clearInterval(timer)
       return userLogout().then(() => {
         isLogin.value = false
+        router.push('/')
       })
     },
     okText: '确认',

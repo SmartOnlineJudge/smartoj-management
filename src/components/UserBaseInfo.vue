@@ -1,8 +1,10 @@
 <script setup>
 import dayjs from 'dayjs';
 import { ref } from "vue";
+import { Modal, message } from "ant-design-vue";
 import uploadOutlined from "@ant-design/icons-vue/lib/icons/UploadOutlined.js";
 import { useUserStore } from "@/stores.js";
+import { updateAdminInfo } from "@/request.js";
 
 const MINIO_URL = import.meta.env.VITE_MINIO_URL
 const userStore = useUserStore();
@@ -12,10 +14,34 @@ const dateFormat = 'YYYY-MM-DD';
 const username = ref(user['name']);
 const profile = ref(user['profile']);
 const createdAt = dayjs(user['created_at'], dateFormat);
-const fileList = ref([]);
 
 const updateInfo = () => {
+  Modal.confirm({
+    title: '提示',
+    content: '是否更新当前信息？',
+    onOk() {
+      return updateAdminInfo(username.value, profile.value).then(response => {
+        if (response.data.code === 200) {
+          message.success("信息更新成功")
+        } else {
+          message.error("信息更新失败")
+        }
+      }).catch(() => {
+        message.error("信息更新失败")
+      })
+    },
+    okText: '确认',
+    cancelText: '取消',
+    centered: true
+  })
+}
 
+const onChange = info => {
+  if (info.file.status === 'done') {
+    message.success('头像修改成功！');
+  } else if (info.file.status === 'error') {
+    message.error("头像修改失败");
+  }
 }
 </script>
 
@@ -29,11 +55,11 @@ const updateInfo = () => {
       </div>
       <div class="field">
         <div class="field-name">用户名</div>
-        <a-input :value="username" allow-clear></a-input>
+        <a-input v-model:value="username" allow-clear></a-input>
       </div>
       <div class="field">
         <div class="field-name">个人介绍</div>
-        <a-textarea :value="profile" allow-clear></a-textarea>
+        <a-textarea v-model:value="profile" allow-clear></a-textarea>
       </div>
       <div class="field">
         <div class="field-name">超级管理员身份</div>
@@ -68,9 +94,10 @@ const updateInfo = () => {
         <div class="field-name">用户头像</div>
         <a-avatar :src="MINIO_URL + user['avatar']" :size="120" alt="favicon.svg"/><br/>
         <a-upload
-            :file-list="fileList"
-            name="file"
-            action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+            name="avatar"
+            action="/api/user/avatar"
+            :withCredentials="true"
+            @change="onChange"
         >
           <a-button>
             <uploadOutlined/>

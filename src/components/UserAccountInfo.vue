@@ -50,13 +50,14 @@ const updateInfo = key => {
              type="primary"
              @click="() => {updateInfo(item.key)}"
           >修改</a>
+          <a v-else disabled>修改</a>
         </template>
         <a-list-item-meta :description="item.description">
           <template #title>
             {{ item.title }}
           </template>
         </a-list-item-meta>
-        {{ item.content }}
+        <div>{{ item.content }}</div>
       </a-list-item>
     </template>
   </a-list>
