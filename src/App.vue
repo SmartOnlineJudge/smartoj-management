@@ -13,24 +13,13 @@
         <h2 style="padding-left: 8px">后台管理界面</h2>
       </div>
       <div class="avatar">
-        <a-menu :selectable="false" style="border-inline-end: none">
-          <a-menu-item @click="() => {openDropdown = true}">
-            <div class="user-info">
-              <a-avatar :src="MINIO_URL + userStore.user.avatar"></a-avatar>
-              <span class="username">{{ userStore.user.name }}</span>
-            </div>
-          </a-menu-item>
-        </a-menu>
-        <a-dropdown
-            placement="bottom"
-            :trigger="['click', 'hover']"
-            v-model:open="openDropdown"
-            :align="{ offset: [85,  0] }"
-            arrow
-        >
-          <div style="width: 0; height: 0; opacity: 0"></div>
+        <a-dropdown placement="bottom" :align="{ offset: [0,  17] }">
+          <div class="user-info">
+            <a-avatar :src="MINIO_URL + userStore.user.avatar"></a-avatar>
+            <span class="username">{{ userStore.user.name }}</span>
+          </div>
           <template #overlay>
-            <a-menu @click="item => router.push(item.key)">
+            <a-menu @click="item => {router.push(item.key)}">
               <a-menu-item key="/user-center">
                 <span>
                   <IdcardOutlined />
@@ -53,7 +42,7 @@
         <a-menu
             mode="inline"
             :style="{ height: '100%', borderRight: 0 }"
-            @click="item => router.push(item.key)"
+            @click="item => {router.push(item.key)}"
             :selectedKeys="[$route.path]"
         >
           <a-menu-item key="/">
@@ -69,8 +58,8 @@
                 <span>用户管理</span>
               </span>
             </template>
-            <a-menu-item key="/user-info">用户信息管理</a-menu-item>
-            <a-menu-item key="/user-cookie">用户登录管理</a-menu-item>
+            <a-menu-item key="/user/user-info">用户信息管理</a-menu-item>
+            <a-menu-item key="/user/user-cookie">用户登录管理</a-menu-item>
           </a-sub-menu>
           <a-sub-menu key="question">
             <template #title>
@@ -79,10 +68,10 @@
                 <span>题目管理</span>
               </span>
             </template>
-            <a-menu-item key="/question-info">题目信息管理</a-menu-item>
-            <a-menu-item key="/daily-question">每日一题管理</a-menu-item>
-            <a-menu-item key="/code-language">编程语言管理</a-menu-item>
-            <a-menu-item key="/solved-history">刷题记录管理</a-menu-item>
+            <a-menu-item key="/question/question-info">题目信息管理</a-menu-item>
+            <a-menu-item key="/question/daily-question">每日一题管理</a-menu-item>
+            <a-menu-item key="/question/code-language">编程语言管理</a-menu-item>
+            <a-menu-item key="/question/solved-history">刷题记录管理</a-menu-item>
           </a-sub-menu>
           <a-sub-menu key="solving">
             <template #title>
@@ -225,6 +214,12 @@ const logout = async () => {
 }
 .avatar {
   margin-left: auto;
+  padding: 5px 10px;
+  line-height: normal;
+  border-radius: 10px;
+}
+.avatar:hover {
+  background: rgba(0, 0, 0, 0.06);
 }
 .avatar .user-info {
   display: flex;

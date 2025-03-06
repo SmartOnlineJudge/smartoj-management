@@ -10,32 +10,32 @@ const router = createRouter({
       component: () => import('../pages/Dashboard.vue')
     },
     {
-      path: '/user-info',
+      path: '/user/user-info',
       name: 'user-info',
       component: () => import('../pages/user/UserInfo.vue')
     },
     {
-      path: '/user-cookie',
+      path: '/user/user-cookie',
       name: 'user-cookie',
       component: () => import('../pages/user/UserCookie.vue')
     },
     {
-      path: '/code-language',
+      path: '/question/code-language',
       name: 'code-language',
       component: () => import('../pages/question/CodeLanguage.vue')
     },
     {
-      path: '/question-info',
+      path: '/question/question-info',
       name: 'question-info',
       component: () => import('../pages/question/QuestionInfo.vue')
     },
     {
-      path: '/solved-history',
+      path: '/question/solved-history',
       name: 'solved-history',
       component: () => import('../pages/question/SolvedHistory.vue')
     },
     {
-      path: '/daily-question',
+      path: '/question/daily-question',
       name: 'daily-question',
       component: () => import('../pages/question/DailyQuestion.vue')
     },

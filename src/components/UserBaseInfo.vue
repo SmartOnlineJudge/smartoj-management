@@ -38,9 +38,12 @@ const updateInfo = () => {
 
 const onChange = info => {
   if (info.file.status === 'done') {
-    message.success('头像修改成功！');
-  } else if (info.file.status === 'error') {
-    message.error("头像修改失败");
+    let response = info.file.response;
+    if (response.code !== 200) {
+      message.error(response.message);
+    } else {
+      message.success("头像修改成功！");
+    }
   }
 }
 </script>
@@ -92,7 +95,7 @@ const onChange = info => {
     <div class="avatar-info">
       <div class="field">
         <div class="field-name">用户头像</div>
-        <a-avatar :src="MINIO_URL + user['avatar']" :size="120" alt="favicon.svg"/><br/>
+        <a-image :src="MINIO_URL + user['avatar']" :width="120" alt="favicon.svg"/><br/><br/>
         <a-upload
             name="avatar"
             action="/api/user/avatar"
