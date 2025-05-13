@@ -70,7 +70,6 @@
             </template>
             <a-menu-item key="/question/question-info">题目信息管理</a-menu-item>
             <a-menu-item key="/question/daily-question">每日一题管理</a-menu-item>
-            <a-menu-item key="/question/code-language">编程语言管理</a-menu-item>
             <a-menu-item key="/question/solved-history">刷题记录管理</a-menu-item>
           </a-sub-menu>
           <a-sub-menu key="solving">
@@ -132,7 +131,7 @@ let currentAdmin, timer
 const openDropdown = ref(false)
 const spinning = ref(true)
 const isLogin = ref(null)
-const checkFrequency = 2000  // 登录状态检查频率
+const checkFrequency = 4000  // 登录状态检查频率
 const MINIO_URL = import.meta.env.VITE_MINIO_URL
 const userStore = useUserStore();
 

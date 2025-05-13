@@ -135,17 +135,18 @@ const lapse = record => {
     title: targetStatus ? '启用用户' : '禁用用户',
     content: `确定要${targetStatus ? '启用' : '禁用'}该用户吗？`,
     onOk() {
+      record.is_deleted = !record.is_deleted;
       return userLapse(record.user_id, record.is_deleted).then(response => {
         if (response.data.code === 200) {
           record.loading = false;
-          record.is_deleted = !record.is_deleted
-          console.log(record.is_deleted)
           message.success(`已${targetStatus ? '启用' : '禁用'}`)
         } else {
           message.error("操作失败")
         }
       }).catch(() => {
         message.error("请求失败")
+      }).finally(() => {
+        record.loading = false;
       })
     },
     onCancel(){

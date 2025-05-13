@@ -20,11 +20,6 @@ const router = createRouter({
       component: () => import('../pages/user/UserCookie.vue')
     },
     {
-      path: '/question/code-language',
-      name: 'code-language',
-      component: () => import('../pages/question/CodeLanguage.vue')
-    },
-    {
       path: '/question/question-info',
       name: 'question-info',
       component: () => import('../pages/question/QuestionInfo.vue')

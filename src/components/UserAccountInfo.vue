@@ -1,5 +1,8 @@
 <script setup>
-import { useUserStore } from "@/stores.js";
+import {useUserStore} from "@/stores.js";
+import {reactive, ref, computed} from "vue";
+import {checkCode, updatePassword, verCode, updateEmail} from "@/request.js";
+import {message} from "ant-design-vue";
 
 const userStore = useUserStore();
 const user = userStore.user;
@@ -31,13 +34,115 @@ const dataSource = [
   }
 ]
 
-const updateInfo = key => {
-  if (key === 'email') {
-    console.log('修改邮箱')
+const open = ref(false);
+const codeSentTime = ref(null);
+const currentAction = ref('');
+const formRef = ref();
+
+const formState = reactive({
+  newpassword: '',
+  newemail: '',
+  verification_code: '',
+  recipient: user['email']
+});
+
+const isSendDisabled = computed(() => {
+  return currentAction.value === 'password'
+      ? !formState.newpassword
+      : !formState.newemail;
+});
+
+const isSubmitDisabled = computed(() => {
+  if (currentAction.value === 'password') {
+    return !(formState.newpassword && formState.verification_code);
   } else {
-    console.log('修改密码')
+    return !(formState.newemail && formState.verification_code);
+  }
+});
+
+const updateInfo = (key) => {
+  currentAction.value = key;
+  open.value = true;
+}
+
+const resetForm = () => {
+  formRef.value?.resetFields();
+};
+
+const Send = () => {
+  verCode(formState.recipient).then(response => {
+    if (response.data.code === 200) {
+      codeSentTime.value = Date.now();
+      message.success(`验证码已发送`);
+    } else if (response.data.code === 235) {
+      message.error("邮箱不能为空");
+    } else {
+      message.error("请求过于频繁");
+    }
+  }).catch(() => {
+    message.error("请求失败");
+  });
+}
+
+const Update_Password = () => {
+  checkCode(formState.verification_code, formState.recipient).then(response => {
+    const currentTime = Date.now();
+    if (response.data.code === 200) {
+      updatePassword(formState.newpassword, formState.verification_code).then(response => {
+        if (response.data.code === 200) {
+          message.success(`密码修改成功`);
+          open.value = false;
+          resetForm();
+        } else {
+          handleVerificationError(currentTime);
+        }
+      }).catch(() => {
+        message.error("密码修改失败");
+      });
+    } else {
+      handleVerificationError(currentTime);
+    }
+  }).catch(() => {
+    message.error("请求失败");
+  });
+}
+
+const Update_Email = () => {
+  checkCode(formState.verification_code, formState.recipient).then(response => {
+    const currentTime = Date.now();
+    if (response.data.code === 200) {
+      updateEmail(formState.newemail, formState.verification_code).then(response => {
+        if (response.data.code === 200) {
+          message.success(`邮箱修改成功`);
+          userStore.user.email = formState.newemail; // 更新store中的邮箱
+          open.value = false;
+          resetForm();
+        } else {
+          handleVerificationError(currentTime);
+        }
+      }).catch(() => {
+        message.error("邮箱修改失败");
+      });
+    } else {
+      handleVerificationError(currentTime);
+    }
+  }).catch(() => {
+    message.error("请求失败");
+  });
+}
+
+const handleVerificationError = (currentTime) => {
+  if (currentTime - codeSentTime.value > 300000) {
+    message.error("验证码已过期");
+  } else {
+    message.error("验证码错误");
   }
 }
+
+const handleCancel = () => {
+  open.value = false;
+  resetForm();
+};
 </script>
 
 <template>
@@ -61,8 +166,49 @@ const updateInfo = key => {
       </a-list-item>
     </template>
   </a-list>
+  <a-modal v-model:open="open"
+           :title="currentAction === 'password'?'修改密码': '修改邮箱'"
+           okText="提交"
+           cancelText="取消"
+           :closable="false"
+           :ok-button-props="{ disabled: isSubmitDisabled }"
+           @ok="currentAction === 'password'? Update_Password() : Update_Email()"
+           @cancel="() => handleCancel()"
+  >
+    <a-form :model="formState" ref="formRef">
+      <a-form-item
+          :label="currentAction === 'password'?'新密码': '新邮箱'"
+          :name="currentAction === 'password'? 'newpassword' : 'newemail'"
+          :rules="[currentAction === 'password'?
+          { required: true, message: '请输入密码!' }:
+          { required: true, message: '请输入新邮箱!' }]"
+      >
+        <a-input-password
+            v-if="currentAction === 'password'"
+            v-model:value="formState.newpassword"
+        />
+        <a-input v-else v-model:value="formState.newemail"/>
+      </a-form-item>
+      <a-form-item
+          label="收件邮箱"
+          name="recipient"
+      >
+        <a-input v-model:value="formState.recipient"/>
+      </a-form-item>
+      <a-form-item
+          label="验证码"
+          name="verification_code"
+          :rules="[{ required: true, message: '请输入验证码!' }]"
+      >
+        <div style="display: flex; gap: 20px; width: 280px">
+          <a-input v-model:value="formState.verification_code"/>
+          <a-button type="primary"
+                    @click="Send"
+                    :disabled="isSendDisabled"
+          >发送验证码
+          </a-button>
+        </div>
+      </a-form-item>
+    </a-form>
+  </a-modal>
 </template>
-
-<style scoped>
-
-</style>

@@ -19,7 +19,8 @@ export const getCurrentAdmin = () => {
 }
 
 export const updateAdminInfo = (name, profile) => {
-    return requests.put('/management/user', {name: name, profile: profile})
+    return requests.put('/management/user',
+        {name: name, profile: profile})
 }
 
 export const getUserList = (page, size) => {
@@ -57,4 +58,39 @@ export const userForcedExit = (session_id) => {
             }
         }
     )
+}
+
+export const getQuestions = (page, size) => {
+    return requests.get('/management/questions', {
+        params: {
+            page: page,
+            size: size
+        }
+    })
+}
+
+export const updatePassword = (new_password, vfcode) => {
+    return requests.patch('/user/password',
+        {
+            new_password: new_password,
+            vfcode: vfcode
+        }
+    )
+}
+
+export const updateEmail = (new_email, vfcode) => {
+    return requests.patch('/user/email',
+        {
+            new_email: new_email,
+            vfcode: vfcode
+        }
+    )
+}
+
+export const verCode = (recipient) => {
+    return requests.post('/user/verification-code', {recipient: recipient})
+}
+
+export const checkCode = (vfcode,email) => {
+    return requests.post('/user/check-verification-code', {vfcode: vfcode,email: email})
 }
