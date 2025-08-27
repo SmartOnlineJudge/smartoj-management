@@ -41,7 +41,7 @@ const formRef = ref();
 
 const formState = reactive({
   newpassword: '',
-  newemail: '',
+  newEmail: '',
   verification_code: '',
   recipient: user['email']
 });
@@ -49,14 +49,14 @@ const formState = reactive({
 const isSendDisabled = computed(() => {
   return currentAction.value === 'password'
       ? !formState.newpassword
-      : !formState.newemail;
+      : !formState.newEmail;
 });
 
 const isSubmitDisabled = computed(() => {
   if (currentAction.value === 'password') {
     return !(formState.newpassword && formState.verification_code);
   } else {
-    return !(formState.newemail && formState.verification_code);
+    return !(formState.newEmail && formState.verification_code);
   }
 });
 
@@ -111,10 +111,10 @@ const Update_Email = () => {
   checkCode(formState.verification_code, formState.recipient).then(response => {
     const currentTime = Date.now();
     if (response.data.code === 200) {
-      updateEmail(formState.newemail, formState.verification_code).then(response => {
+      updateEmail(formState.newEmail, formState.verification_code).then(response => {
         if (response.data.code === 200) {
           message.success(`邮箱修改成功`);
-          userStore.user.email = formState.newemail; // 更新store中的邮箱
+          userStore.user.email = formState.newEmail; // 更新store中的邮箱
           open.value = false;
           resetForm();
         } else {
@@ -178,7 +178,7 @@ const handleCancel = () => {
     <a-form :model="formState" ref="formRef">
       <a-form-item
           :label="currentAction === 'password'?'新密码': '新邮箱'"
-          :name="currentAction === 'password'? 'newpassword' : 'newemail'"
+          :name="currentAction === 'password'? 'newpassword' : 'newEmail'"
           :rules="[currentAction === 'password'?
           { required: true, message: '请输入密码!' }:
           { required: true, message: '请输入新邮箱!' }]"
@@ -187,7 +187,7 @@ const handleCancel = () => {
             v-if="currentAction === 'password'"
             v-model:value="formState.newpassword"
         />
-        <a-input v-else v-model:value="formState.newemail"/>
+        <a-input v-else v-model:value="formState.newEmail"/>
       </a-form-item>
       <a-form-item
           label="收件邮箱"

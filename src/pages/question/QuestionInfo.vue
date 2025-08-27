@@ -1,6 +1,9 @@
 <template>
   <a-tabs v-model:activeKey="activeKey">
     <a-tab-pane key="1" tab="题目信息管理">
+      <a-button type="primary"
+                @click="()=>{addQuestionData.openAddQuestion=true}">+增加
+      </a-button>
       <a-table
           :columns="columns"
           :dataSource="data"
@@ -10,13 +13,20 @@
       >
         <template #bodyCell="{ column, record }">
           <template v-if="column.key === 'operation'">
-            <a-button type="primary" @click="() => { showDrawer(record) }">详情</a-button>
+            <a-button type="link" @click="() => { showDrawer(record) }">详细</a-button>
+            <a-button type="link" @click="() => { revise(record) }">修改</a-button>
           </template>
           <template v-if="column.key === 'difficulty'">
             {{ record.difficulty === 'easy' ? '简单' : record.difficulty === 'medium' ? '中等' : '困难' }}
           </template>
           <template v-if="column.key === 'is_deleted'">
-            {{ record.is_deleted === 0 ? '否' : '是' }}
+            <a-switch
+                v-model:checked="record.is_deleted"
+                :loading="record.loading"
+                checked-children="是"
+                un-checked-children="否"
+                @change="(checked)=>{delQuestion(checked,record)}"
+            />
           </template>
         </template>
       </a-table>
@@ -30,22 +40,29 @@
       :closable=false
       :maskStyle="{backgroundColor: 'rgba(30, 30, 30, 0.2)'}"
       :footer-style="{ textAlign: 'right' }"
-      @close="onClose"
   >
     <div>
       <h3>题目信息概览</h3>
       <a-descriptions>
         <a-descriptions-item label="id">{{ current.id }}</a-descriptions-item>
-        <a-descriptions-item label="题目名称" :span="2">{{ current.title }}</a-descriptions-item>
-        <a-descriptions-item label="题目难度">{{ current.difficulty }}</a-descriptions-item>
+        <a-descriptions-item label="题目名称">{{ current.title }}</a-descriptions-item>
+        <a-descriptions-item label="题目难度">
+          {{ current.difficulty === 'easy' ? '简单' : current.difficulty === 'medium' ? '中等' : '困难' }}
+        </a-descriptions-item>
+        <a-descriptions-item label="题目创建人">{{ current.publisher.user_dynamic.name }}</a-descriptions-item>
         <a-descriptions-item label="提交数量">{{ current.submission_quantity }}</a-descriptions-item>
         <a-descriptions-item label="通过数量">{{ current.pass_quantity }}</a-descriptions-item>
         <a-descriptions-item label="创建时间">{{ current.created_at }}</a-descriptions-item>
-        <a-descriptions-item label="题目创建人">{{ current.publisher.name }}</a-descriptions-item>
         <a-descriptions-item label="标签">
-                <span v-for="tag in current.tags">{{ tag.name }}
-                  {{ tag.id === current.tags.length - 1 ? " 、" : "" }}
-                </span>
+          <a-select
+              v-model:value="tags"
+              mode="multiple"
+              style="width: 80%"
+              placeholder="Please select"
+              :options="tagOptions"
+              @deselect="tagDelete"
+              @select="addTag"
+          />
         </a-descriptions-item>
       </a-descriptions>
     </div>
@@ -55,31 +72,48 @@
     </div>
     <div>
       <h3>测试用例</h3>
-      <a-table :columns="innerColumns1" :dataSource="dataSource1" :pagination="false" bordered>
-        <template #bodyCell="{ column, record, text}">
+      <a-button type="primary" style="margin-bottom: 8px"
+                @click="()=>{addTestData.openAddTest=true;addTestData.id=currentId}">+增加
+      </a-button>
+      <a-modal v-model:open="addTestData.openAddTest" title="增加测试用例" @ok="()=>{addTestHandler(addTestData)}"
+               @cancel="()=>{addTestData.testData=''}">
+        <a-form
+            :model="addTestData"
+        >
+          <a-form-item
+              label="题目编号"
+          >
+            {{ addTestData.id }}
+          </a-form-item>
+
+          <a-form-item
+              label="测试数据"
+          >
+            <a-input v-model:value="addTestData.testData"/>
+          </a-form-item>
+        </a-form>
+      </a-modal>
+      <a-table :columns="innerColumnsTest" :dataSource="dataSourceTest" :pagination="false" bordered>
+        <template #bodyCell="{ column, record }">
           <template v-if="column.key==='input_output'">
             <a-textarea
-                v-if="editableData1[record.id]"
-                v-model:value="editableData1[record.id][column.dataIndex]"
+                v-if="editableDataTest[record.id]"
+                v-model:value="editableDataTest[record.id][column.dataIndex]"
                 style="margin: -5px 0"
             />
           </template>
           <template v-if="column.key === 'test_operation'">
             <div class="editable-row-operations">
-                       <span v-if="editableData1[record.id]">
-                         <a-typography-link @click="()=>{save(record,1)}">保存</a-typography-link>
-                         <a-popconfirm
-                             title="确定要取消?"
-                             ok-text="确定"
-                             cancel-text="取消"
-                             @confirm="()=>{confirm(record,1)}"
-                         >
-                           <a>取消</a>
-                         </a-popconfirm>
-                       </span>
+              <span v-if="editableDataTest[record.id]">
+                  <a @click="()=>{save(record.id,'test')}">保存</a>
+                  <a-popconfirm title="确定要删除此项？" @confirm="()=>{del_test(record.id)}">
+                    <a>删除</a>
+                  </a-popconfirm>
+                      <a @click="()=>{cancel(record,'test')}">取消</a>
+                </span>
               <span v-else>
-                        <a @click="()=>{edit(record,1)}">编辑</a>
-                      </span>
+                  <a @click="()=>{edit(record.id,'test')}">编辑</a>
+              </span>
             </div>
           </template>
         </template>
@@ -87,12 +121,41 @@
     </div>
     <div>
       <h3>内存时间限制</h3>
-      <a-table :columns="innerColumns2" :dataSource="dataSource2" :pagination="false" bordered>
+      <a-button type="primary" style="margin-bottom: 8px"
+                @click="()=>{addMemoryTimeLimitData.openAddMemoryTimeLimit=true;addMemoryTimeLimitData.question_id=currentId}">
+        +增加
+      </a-button>
+      <a-modal v-model:open="addMemoryTimeLimitData.openAddMemoryTimeLimit"
+               title="增加内存时间限制"
+               @ok="()=>{addMemoryTimeLimitHandler(addMemoryTimeLimitData)}"
+               @cancel="()=>{resetMemoryTimeLimit.resetFields()}">
+        <a-form :model="addMemoryTimeLimitData" ref="resetMemoryTimeLimit">
+          <a-form-item label="题目编号">
+            {{ addMemoryTimeLimitData.question_id }}
+          </a-form-item>
+          <a-form-item label="编程语言">
+            <a-select v-model:value=addMemoryTimeLimitData.language placeholder="请选择编程语言">
+              <a-select-option v-for="(_,value) in languageId"
+                               :value=value>{{
+                  value
+                }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item label="内存限制">
+            <a-input v-model:value="addMemoryTimeLimitData.memory_limit"/>
+          </a-form-item>
+          <a-form-item label="时间限制">
+            <a-input v-model:value="addMemoryTimeLimitData.time_limit"/>
+          </a-form-item>
+        </a-form>
+      </a-modal>
+      <a-table :columns="innerColumnsMemory" :dataSource="dataSourceMemory" :pagination="false" bordered>
         <template #bodyCell="{ column, record }">
           <template v-if="column.key==='memory_limit' || column.key==='time_limit'">
             <a-input
-                v-if="editableData2[record.id]"
-                v-model:value="editableData2[record.id][column.dataIndex]"
+                v-if="editableDataMemory[record.id]"
+                v-model:value="editableDataMemory[record.id][column.dataIndex]"
                 style="margin: -5px 0"
             />
           </template>
@@ -101,20 +164,13 @@
           </template>
           <template v-if="column.key === 'memory_operation'">
             <div class="editable-row-operations">
-                       <span v-if="editableData2[record.id]">
-                         <a-typography-link @click="()=>{save(record,2)}">保存</a-typography-link>
-                         <a-popconfirm
-                             title="确定要取消?"
-                             ok-text="确定"
-                             cancel-text="取消"
-                             @confirm="()=>{confirm(record,2)}"
-                         >
-                           <a>取消</a>
-                         </a-popconfirm>
-                       </span>
+              <span v-if="editableDataMemory[record.id]">
+                  <a @click="()=>{save(record.id,'memory')}">保存</a>
+                      <a @click="()=>{cancel(record,'memory')}">取消</a>
+                </span>
               <span v-else>
-                        <a @click="()=>{edit(record,2)}">编辑</a>
-                      </span>
+                  <a @click="()=>{edit(record.id,'memory')}">编辑</a>
+              </span>
             </div>
           </template>
         </template>
@@ -122,64 +178,167 @@
     </div>
     <div>
       <h3>解题框架</h3>
-      <div style="margin-bottom: 10px">
-        <span>编程语言：</span>
-        <select @change=" event => {languageChangeHandler(event,current.solving_frameworks,1)}">
-          <option v-for="item in current.solving_frameworks" :value=item.language.name>{{
-              item.language.name
-            }}
-          </option>
-        </select>
+      <div style="margin-bottom: 5px">
+        <span style="font-size:15px">编程语言：</span>
+        <span>
+          <a-select v-model:value="languageSolve"
+                    @change=" event => {languageChangeHandler(event,current.solving_frameworks,'solving_frameworks')}"
+                    size="small"
+                    style="width: 100px"
+          >
+            <option v-for="(_,value) in languageId"
+                    :value=value>{{
+                value
+              }}
+            </option>
+          </a-select>
+        </span>
+        <span style="margin-left: 550px">
+            <a-button type="link"
+                      @click="reviseSolvingFrameworkHandler(idSolvingFramework,codeSolve,currentId,languageSolve)">
+              保存
+            </a-button>
+        </span>
       </div>
       <MonacoEditor
-          v-model:code="code1"
-          v-model:language="language1"
+          v-model:code="codeSolve"
+          v-model:language="languageSolve"
           :theme="theme"
           fontSize="16px"
-          style="border: 1px solid black;"
+          style="border: 1px solid black"
       />
     </div>
     <div>
-      <h3>判题模块</h3>
-      <div style="margin-bottom: 10px">
-        <span>编程语言：</span>
-        <select @change=" event => {languageChangeHandler(event,current.judge_templates,2)}">
-          <option v-for="item in current.judge_templates" :value=item.language.name>
-            {{ item.language.name }}
-          </option>
-        </select>
+      <h3>判题模板</h3>
+      <div style="margin-bottom: 5px">
+        <span style="font-size:15px">编程语言：</span>
+        <span>
+          <a-select v-model:value="languageJudge"
+                    @change=" event => {languageChangeHandler(event,current.judge_templates,'judge_template')}"
+                    size="small"
+                    style="width: 100px"
+          >
+            <option v-for="(_,value) in languageId"
+                    :value=value>{{
+                value
+              }}
+            </option>
+          </a-select>
+        </span>
+        <span style="margin-left: 550px">
+            <a-button type="link"
+                      @click="reviseJudgeTemplateHandler(idJudgeTemplate,codeJudge,currentId,languageJudge)">
+              保存
+            </a-button>
+        </span>
       </div>
       <MonacoEditor
-          v-model:code="code2"
-          v-model:language="language2"
+          v-model:code="codeJudge"
+          v-model:language="languageJudge"
           :theme="theme"
           fontSize="16px"
           style="border: 1px solid black;"
       />
     </div>
     <template #footer>
-      <a-button type="primary" @click="onClose">确定</a-button>
+      <a-button type="primary" @click="()=>{open = false;data.filter(item=>item.id ===currentId)[0]=current}">确定
+      </a-button>
     </template>
   </a-drawer>
+  <a-modal v-model:open="openRevise" :width="700" @ok="()=>{handleOk(currentRevise.id)}">
+    <a-form
+        :model="formState"
+    >
+      <a-form-item label="题目ID" name="id">
+        <span>{{ currentRevise.id }}</span>
+      </a-form-item>
+      <a-form-item label="题目名称" name="title">
+        <a-input v-model:value="formState.title" allow-clear/>
+      </a-form-item>
+      <a-form-item label="是否删除">
+        <a-switch v-model:checked="formState.is_deleted"
+                  checked-children="是"
+                  un-checked-children="否"/>
+      </a-form-item>
+      <a-form-item label="题目难度" name="difficulty">
+        <a-radio-group v-model:value="formState.difficulty">
+          <a-radio value="easy">简单</a-radio>
+          <a-radio value="medium">中等</a-radio>
+          <a-radio value="hard">困难</a-radio>
+        </a-radio-group>
+      </a-form-item>
+      <a-form-item label="题目描述" name="description">
+        <a-textarea v-model:value="formState.description" :rows="8"/>
+      </a-form-item>
+    </a-form>
+  </a-modal>
+  <a-modal v-model:open="addQuestionData.openAddQuestion"
+           :width="700"
+           title="添加题目"
+           :footer="null"
+           @cancel="()=>{addQuestionData.openAddQuestion = false;addQuestionFrom.resetFields()}"
+  >
+    <a-form
+        ref="addQuestionFrom"
+        :model="addQuestionData"
+    >
+      <a-form-item label="题目名称" name="title" :rules="[{required: true,message: '请输入题目名称'}]">
+        <a-input v-model:value="addQuestionData.title" allow-clear/>
+      </a-form-item>
+      <a-form-item label="题目难度" name="difficulty" :rules="[{required: true,message: '请输入题目标题'}]">
+        <a-radio-group v-model:value="addQuestionData.difficulty">
+          <a-radio value="easy">简单</a-radio>
+          <a-radio value="medium">中等</a-radio>
+          <a-radio value="hard">困难</a-radio>
+        </a-radio-group>
+      </a-form-item>
+      <a-form-item label="题目描述" name="description" :rules="[{required: true,message: '请输入题目描述'}]">
+        <a-textarea v-model:value="addQuestionData.description" :rows="8"/>
+      </a-form-item>
+      <a-form-item style="margin-left: 516px;height: 5px">
+        <a-button style="margin-right: 8px"
+                  @click="()=>{addQuestionData.openAddQuestion=false;addQuestionFrom.resetFields()}"
+        >
+          取消
+        </a-button>
+        <a-button type="primary" html-type="submit" @click="addQuestionHandler">确认</a-button>
+      </a-form-item>
+    </a-form>
+  </a-modal>
 </template>
 
 <script setup>
 import {onBeforeMount, reactive, ref} from 'vue';
-import {getQuestions} from "@/request.js";
-import {cloneDeep} from "lodash-es";
+import {
+  delTest,
+  getQuestions,
+  ReviseRevise,
+  updateMemoryLimits,
+  updateTest,
+  addTest,
+  addMemoryTimeLimit,
+  addSolvingFramework,
+  reviseSolvingFramework,
+  addJudgeTemplate,
+  reviseJudgeTemplate,
+  permissionDetection,
+  addQuestion, addQuestionTag, deleteQuestionTag
+} from "@/request.js";
 import MonacoEditor from "../../components/MonacoEditor.vue";
+import {message, Modal} from "ant-design-vue";
+import {cloneDeep} from 'lodash-es';
 
 const activeKey = ref('1');
 const open = ref(false);
 const data = ref([])
-const dataSource1 = ref([])
-const dataSource2 = ref([])
+const dataSourceTest = ref([])
+const dataSourceMemory = ref([])
+const inforCurrent = ref()
 const current = ref({})
 const defaultPageSize = 5
 const spinning = ref(true)
+
 const total = ref()
-const editableData1 = reactive({});
-const editableData2 = reactive({});
 const pagination = reactive({
   total: total,
   pageSize: defaultPageSize,
@@ -218,8 +377,93 @@ const columns = [
     align: 'center'
   },
 ];
+const currentId = ref()
+const tags = ref([])
+const showDrawer = record => {
+  open.value = true;
+  current.value = record;
+  tags.value = [];
+  dataSourceTest.value = record.tests;
+  dataSourceMemory.value = record.memory_time_limits;
+  languageSolve.value = record.solving_frameworks[0]?.language.name ?? 'C';
+  codeSolve.value = record.solving_frameworks[0]?.code_framework ?? '';
+  codeJudge.value = record.judge_templates[0]?.code ?? '';
+  languageJudge.value = record.judge_templates[0]?.language.name ?? 'C';
+  idSolvingFramework.value = record.solving_frameworks[0]?.id ?? '';
+  currentId.value = record.id;
+  for (let i = 0; i < record.tags.length; i++) {
+    tags.value.push(record.tags[i].tag.name)
+  }
+}
 
-const innerColumns1 = [
+//标签
+const tagOptionsObject = {
+  "string": 1,
+  "递归": 2,
+  "动态规划": 3,
+  "数学": 4,
+  "二分查找": 5,
+  "哈希表": 6,
+  "链表": 7,
+  "树": 8,
+  "堆": 9,
+  "栈": 10,
+  "队列": 11,
+  "字符串": 12,
+  "排序": 13,
+  "位运算": 14,
+  "模拟": 15,
+  "矩阵": 16,
+  "并查集": 17,
+  "线段树": 18,
+  "树状数组": 19,
+  "广度优先搜索": 20,
+  "深度优先搜索": 21,
+  "二叉树": 22,
+  "二叉搜索树": 23,
+  "分治": 24,
+  "前缀和": 25,
+  "最短路径": 26,
+  "最短生成树": 27,
+  "回溯": 28,
+  "滑动窗口": 29,
+  "双指针": 30
+};
+const tagOptions = Object.keys(tagOptionsObject).map(key => ({
+  value: key
+}));
+const addTag = (tag) => {
+  addQuestionTag(currentId.value, tagOptionsObject[tag]).then(response => {
+    if (response.data.code === 200) {
+      console.log(response.data.data.question_tag_id)
+      current.value.tags.push({"id": response.data.data.question_tag_id, "tag": {"name": tag}});
+      message.success(response.data.message);
+    } else {
+      message.error(response.data.message);
+    }
+  }).catch(() => {
+    message.error("请求失败");
+  })
+}
+const tagDelete = (value) => {
+  const questionTag = current.value.tags.filter(tag => value === tag.tag.name)[0]
+  console.log(questionTag.id)
+  deleteQuestionTag(questionTag.id).then(response => {
+    if (response.data.code === 200) {
+      current.value.tags = current.value.tags.filter(tag => value !== tag.tag.name);
+      message.success(response.data.message);
+    } else {
+      message.error(response.data.message);
+    }
+  }).catch(() => {
+    message.error("请求失败");
+  })
+}
+
+//测试用例、内存时间限制
+const editableDataTest = reactive({});
+const editableDataMemory = reactive({});
+const innerColumnsTest = [
   {
     title: 'ID',
     dataIndex: 'id',
@@ -238,8 +482,7 @@ const innerColumns1 = [
     align: 'center'
   },
 ];
-
-const innerColumns2 = [
+const innerColumnsMemory = [
   {
     title: 'ID',
     dataIndex: 'id',
@@ -271,71 +514,258 @@ const innerColumns2 = [
   },
 ];
 
-const showDrawer = record => {
-  open.value = true;
-  current.value = record;
-  dataSource1.value = record.tests;
-  dataSource2.value = record.memory_time_limits;
-  code1.value = record.solving_frameworks[0]?.code_framework ?? '暂无';
-  code2.value = record.judge_templates[0]?.code ?? '暂无'
-}
-
-const onClose = () => {
-  open.value = false;
-};
-
-const edit = (record, num) => {
-  if (num === 1) {
-    console.log(num)
-    editableData1[record.id] = cloneDeep(dataSource1.value.filter(item => record.id === item.id)[0]);
+const edit = (id, name) => {
+  if (name === 'test') {
+    editableDataTest[id] = cloneDeep(dataSourceTest.value.filter(item => id === item.id)[0])
   } else {
-    editableData2[record.id] = cloneDeep(dataSource2.value.filter(item => record.id === item.id)[0]);
-  }
-};
-const save = (record, num) => {
-  if (num === 1) {
-    console.log(num)
-    Object.assign(record, editableData1[record.id]);
-    delete editableData1[record.id];
-  } else {
-    Object.assign(record, editableData2[record.id]);
-    delete editableData2[record.id];
-  }
-};
-const confirm = (record, num) => {
-  if (num === 1) {
-    delete editableData1[record.id];
-  } else {
-    delete editableData2[record.id];
+    editableDataMemory[id] = cloneDeep(dataSourceMemory.value.filter(item => id === item.id)[0])
   }
 }
-
-const language1 = ref();
-const theme = "vs"  // vs、vs-dar
-const code1 = ref();
-
-const code2 = ref();
-const language2 = ref();
-
-const languageChangeHandler = (event, current, num) => {
-  if (num === 1) {
-    const curr = ref()
-    curr.value = current.filter(item => event.target.value === item.language.name)[0]
-    language1.value = event.target.value;  // 修改语言
-    code1.value = curr.value.code_framework;  // 修改语言对应的代码
+const save = (id, name) => {
+  if (name === 'test') {
+    Object.assign(dataSourceTest.value.filter(item => id === item.id)[0], editableDataTest[id])
+    updateTest(editableDataTest[id]).then(response => {
+      if (response.data.code === 200) {
+        message.success(response.data.message)
+      } else {
+        message.error(response.data.message)
+      }
+    }).catch(() => {
+      message.error("请求失败")
+    }).finally(() => {
+      delete editableDataTest[id];
+    })
   } else {
-    const curr = ref()
-    curr.value = current.filter(item => event.target.value === item.language.name)[0]
-    language2.value = event.target.value;  // 修改语言
-    code2.value = curr.value.code;  // 修改语言对应的代码
+    Object.assign(dataSourceMemory.value.filter(item => id === item.id)[0], editableDataMemory[id])
+    updateMemoryLimits(editableDataMemory[id]).then(response => {
+      if (response.data.code === 200) {
+        message.success(response.data.message)
+      } else {
+        message.error(response.data.message)
+      }
+    }).catch(() => {
+      message.error("请求失败")
+    }).finally(() => {
+      delete editableDataMemory[id];
+    })
+  }
+};
+const del_test = (id) => {
+  delTest(id).then(response => {
+    if (response.data.code === 200) {
+      dataSourceTest.value = dataSourceTest.value.filter(item => item.id !== id);
+      message.success("删除成功")
+    } else {
+      message.error(response.data.message)
+    }
+  }).catch(() => {
+        message.error("请求失败")
+      }
+  ).finally(() => {
+    delete editableDataTest[id]
+  })
+}
+const cancel = (record, name) => {
+  if (name === 'test') {
+    delete editableDataTest[record.id]
+  } else {
+    delete editableDataMemory[record.id]
   }
 }
 
+const addTestData = reactive({
+  id: '',
+  testData: '',
+  openAddTest: false,
+})
+const addTestHandler = (addTestData) => {
+  addTest(addTestData).then(response => {
+    if (response.data.code === 200) {
+      dataSourceTest.value.push({"id": response.data.data.test_id, "input_output": addTestData.testData})
+      message.success(response.data.message)
+    } else {
+      message.error(response.data.message)
+    }
+  }).catch(() => {
+    message.error("请求失败")
+  }).finally(() => {
+    addTestData.openAddTest = false;
+    addTestData.testData = ''
+  })
+}
+const addMemoryTimeLimitData = reactive({
+  question_id: '',
+  language: null,
+  language_id: '',
+  time_limit: '',
+  memory_limit: '',
+  openAddMemoryTimeLimit: false
+})
+const resetMemoryTimeLimit = ref()
+const addMemoryTimeLimitHandler = (addMemoryTimeLimitData) => {
+  addMemoryTimeLimitData.language_id = languageId[addMemoryTimeLimitData.language];
+  addMemoryTimeLimit(addMemoryTimeLimitData).then(response => {
+    if (response.data.code === 200) {
+      dataSourceMemory.value.push(
+          {
+            "id": response.data.data.memory_time_limit_id,
+            "memory_limit": addMemoryTimeLimitData.memory_limit,
+            "time_limit": addMemoryTimeLimitData.time_limit,
+            "language": {
+              "id": addMemoryTimeLimitData.language_id,
+              "name": addMemoryTimeLimitData.language
+            }
+          })
+      message.success(response.data.message)
+    } else {
+      message.error(response.data.message)
+    }
+  }).catch(() => {
+    message.error("请求失败")
+  }).finally(() => {
+    addMemoryTimeLimitData.openAddMemoryTimeLimit = false
+  })
+}
+
+
+//解题框架、判题模块
+const languageSolve = ref();
+const theme = "vs"
+const codeSolve = ref();
+const idSolvingFramework = ref();
+const codeJudge = ref();
+const languageJudge = ref();
+const existSolvingFramework = ref(false)
+const existJudgeTemplate = ref(false)
+const idJudgeTemplate = ref()
+const languageId = {'C': 1, 'C++': 2, 'Java': 3, 'Python': 4, 'JavaScript': 5, 'Golang': 6}
+
+const reviseSolvingFrameworkHandler = (id, code, questionId, language) => {
+  Modal.confirm({
+        title: '操作确认',
+        content: '确认要保存修改的内容吗？',
+        onOk() {
+          if (existSolvingFramework.value === false) {
+            addSolvingFramework(code, languageId[language], questionId).then(response => {
+              if (response.data.code === 200) {
+                current.value.solving_frameworks.push(
+                    {
+                      "id": response.data.data.solving_framework_id,
+                      "code_framework": code,
+                      "language": {
+                        "id": languageId[language],
+                        "name": language
+                      }
+                    });
+                existSolvingFramework.value = true;
+                idSolvingFramework.value = response.data.data.solving_framework_id;
+                message.success(response.data.message)
+              } else {
+                message.error(response.data.message)
+              }
+            }).catch(() => {
+              message.error("请求失败")
+            })
+          } else {
+            return reviseSolvingFramework(id, code).then(response => {
+              if (response.data.code === 200) {
+                current.value.solving_frameworks.filter(item => item.id === id)[0].code_framework = code;
+                message.success(response.data.message)
+              } else {
+                message.error(response.data.message)
+              }
+            }).catch(() => {
+              message.error("请求失败")
+            })
+          }
+        },
+        okText: '确认',
+        cancelText: '取消',
+      }
+  )
+}
+
+const languageChangeHandler = (event, current, name) => {
+  const curr = ref()
+  curr.value = current.filter(item => event === item.language.name)[0]
+  existSolvingFramework.value = true
+  if (curr.value === undefined) {
+    if (name === 'solving_frameworks') {
+      languageSolve.value = event;
+      codeSolve.value = '';
+      existSolvingFramework.value = false;
+    } else {
+      languageJudge.value = event;
+      codeJudge.value = '';
+      existJudgeTemplate.value = false;
+    }
+  } else {
+    if (name === 'solving_frameworks') {
+      languageSolve.value = event;  // 修改语言
+      codeSolve.value = curr.value.code_framework;  // 修改语言对应的代码
+      idSolvingFramework.value = curr.value.id
+    } else {
+      languageJudge.value = event;  // 修改语言
+      codeJudge.value = curr.value.code;  // 修改语言对应的代码
+      idJudgeTemplate.value = curr.value.id
+    }
+  }
+}
+
+const reviseJudgeTemplateHandler = (id, code, questionId, language) => {
+  console.log(id, code, questionId, language, existJudgeTemplate)
+  Modal.confirm({
+        title: '操作确认',
+        content: '确认要保存修改的内容吗？',
+        onOk() {
+          if (existJudgeTemplate.value === false) {
+            addJudgeTemplate(questionId, languageId[language], code).then(response => {
+              if (response.data.code === 200) {
+                console.log(response.data.data.judge_template_id)
+                current.value.judge_templates.push(
+                    {
+                      "id": response.data.data.judge_template_id,
+                      "code": code,
+                      "language": {
+                        "id": languageId[language],
+                        "name": language
+                      }
+                    });
+                existJudgeTemplate.value = true;
+                idJudgeTemplate.value = response.data.data.judge_template_id;
+                message.success(response.data.message)
+              } else {
+                message.error(response.data.message)
+              }
+            }).catch(() => {
+              message.error("请求失败")
+            })
+          } else {
+            return reviseJudgeTemplate(id, code).then(response => {
+              if (response.data.code === 200) {
+                current.value.judge_templates.filter(item => item.id === id)[0].code = code;
+                message.success(response.data.message)
+              } else {
+                message.error(response.data.message)
+              }
+            }).catch(() => {
+              message.error("请求失败")
+            })
+          }
+        },
+        okText: '确认',
+        cancelText: '取消',
+      }
+  )
+}
+
+//获取题目信息
 const pageChangeHandler = async (page, pageSize) => {
   spinning.value = true
   const response = await getQuestions(page, pageSize)
   data.value = response.data.data.results
   total.value = response.data.data.total
+  inforCurrent.value = response.config.params.page
   spinning.value = false
 }
 
@@ -346,6 +776,106 @@ const pageChange = pagination => {
 onBeforeMount(() => {
   pageChangeHandler(1, defaultPageSize)
 })
+
+// 题目信息
+const openRevise = ref(false)
+const currentRevise = ref()
+const formState = reactive({
+  id: '',
+  title: '',
+  description: '',
+  difficulty: '',
+  is_deleted: ''
+})
+const addQuestionData = reactive({
+  openAddQuestion: false,
+  title: null,
+  description: null,
+  difficulty: null
+})
+
+const addQuestionFrom = ref()
+const addQuestionHandler = () => {
+  addQuestion(addQuestionData).then(response => {
+    if (response.data.code === 200) {
+      addQuestionData.openAddQuestion = false
+      addQuestionFrom.value.resetFields();
+      message.success(response.data.message)
+    } else {
+      message.error(response.data.message)
+    }
+  }).catch(() => {
+    message.error("请求失败")
+  })
+}
+const revise = (record) => {
+  openRevise.value = true
+  currentRevise.value = record
+  formState.id = record.id
+  formState.title = record.title
+  formState.description = record.description
+  formState.difficulty = record.difficulty
+  formState.is_deleted = record.is_deleted
+}
+const handleOk = (id) => {
+  permissionDetection(id).then(response => {
+    if (response.data.code === 200) {
+      ReviseRevise(formState).then(response => {
+        if (response.data.code === 200) {
+          const current =ref()
+          current.value = data.value.filter(item => item.id === id)[0]
+          current.value.title = formState.title
+          current.value.description = formState.description
+          current.value.difficulty = formState.difficulty
+          current.value.is_deleted = formState.is_deleted
+          message.success(response.data.message)
+        } else {
+          message.error(response.data.message)
+        }
+      }).catch(() => {
+            message.error('请求失败')
+          }
+      )
+    } else {
+      message.error(response.data.message)
+    }
+  }).catch(() => {
+    message.error('请求失败')
+  }).finally(() => {
+    openRevise.value = false
+  })
+}
+
+const delQuestion = (checked, record) => {
+  record.loading = true;
+  const actionText = checked ? '删除' : '恢复';
+  Modal.confirm({
+    title: `${actionText}题目`,
+    content: `确定要${actionText}该题目吗？`,
+    okText: '确定',
+    cancelText: '取消',
+    onOk() {
+      record.is_deleted = checked;
+      return ReviseRevise(record).then(response => {
+        if (response.data.code === 200) {
+          message.success(response.data.message);
+        } else {
+          record.is_deleted = !checked;
+          message.error(response.data.message);
+        }
+      }).catch(() => {
+        record.is_deleted = !checked;
+        message.error("请求失败");
+      }).finally(() => {
+        record.loading = false;
+      });
+    },
+    onCancel() {
+      record.is_deleted = !checked;
+      record.loading = false;
+    },
+  });
+}
 </script>
 
 <style scoped>
