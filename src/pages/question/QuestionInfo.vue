@@ -322,7 +322,11 @@ import {
   addJudgeTemplate,
   reviseJudgeTemplate,
   permissionDetection,
-  addQuestion, addQuestionTag, deleteQuestionTag
+  addQuestion,
+  addQuestionTag,
+  deleteQuestionTag,
+  allTags,
+  getLanguageList
 } from "@/request.js";
 import MonacoEditor from "../../components/MonacoEditor.vue";
 import {message, Modal} from "ant-design-vue";
@@ -386,6 +390,8 @@ const showDrawer = record => {
   dataSourceTest.value = record.tests;
   dataSourceMemory.value = record.memory_time_limits;
   languageSolve.value = record.solving_frameworks[0]?.language.name ?? 'C';
+  existSolvingFramework.value = !!record.solving_frameworks && record.solving_frameworks.length > 0;
+  existJudgeTemplate.value = !!record.judge_templates && record.judge_templates.length > 0;
   codeSolve.value = record.solving_frameworks[0]?.code_framework ?? '';
   codeJudge.value = record.judge_templates[0]?.code ?? '';
   languageJudge.value = record.judge_templates[0]?.language.name ?? 'C';
@@ -397,45 +403,11 @@ const showDrawer = record => {
 }
 
 //标签
-const tagOptionsObject = {
-  "string": 1,
-  "递归": 2,
-  "动态规划": 3,
-  "数学": 4,
-  "二分查找": 5,
-  "哈希表": 6,
-  "链表": 7,
-  "树": 8,
-  "堆": 9,
-  "栈": 10,
-  "队列": 11,
-  "字符串": 12,
-  "排序": 13,
-  "位运算": 14,
-  "模拟": 15,
-  "矩阵": 16,
-  "并查集": 17,
-  "线段树": 18,
-  "树状数组": 19,
-  "广度优先搜索": 20,
-  "深度优先搜索": 21,
-  "二叉树": 22,
-  "二叉搜索树": 23,
-  "分治": 24,
-  "前缀和": 25,
-  "最短路径": 26,
-  "最短生成树": 27,
-  "回溯": 28,
-  "滑动窗口": 29,
-  "双指针": 30
-};
-const tagOptions = Object.keys(tagOptionsObject).map(key => ({
-  value: key
-}));
+let tagOptionsObject = {};
+let tagOptions = []
 const addTag = (tag) => {
   addQuestionTag(currentId.value, tagOptionsObject[tag]).then(response => {
     if (response.data.code === 200) {
-      console.log(response.data.data.question_tag_id)
       current.value.tags.push({"id": response.data.data.question_tag_id, "tag": {"name": tag}});
       message.success(response.data.message);
     } else {
@@ -447,7 +419,6 @@ const addTag = (tag) => {
 }
 const tagDelete = (value) => {
   const questionTag = current.value.tags.filter(tag => value === tag.tag.name)[0]
-  console.log(questionTag.id)
   deleteQuestionTag(questionTag.id).then(response => {
     if (response.data.code === 200) {
       current.value.tags = current.value.tags.filter(tag => value !== tag.tag.name);
@@ -635,10 +606,10 @@ const codeSolve = ref();
 const idSolvingFramework = ref();
 const codeJudge = ref();
 const languageJudge = ref();
-const existSolvingFramework = ref(false)
-const existJudgeTemplate = ref(false)
+const existSolvingFramework = ref()
+const existJudgeTemplate = ref()
 const idJudgeTemplate = ref()
-const languageId = {'C': 1, 'C++': 2, 'Java': 3, 'Python': 4, 'JavaScript': 5, 'Golang': 6}
+let languageId = {}
 
 const reviseSolvingFrameworkHandler = (id, code, questionId, language) => {
   Modal.confirm({
@@ -689,6 +660,7 @@ const languageChangeHandler = (event, current, name) => {
   const curr = ref()
   curr.value = current.filter(item => event === item.language.name)[0]
   existSolvingFramework.value = true
+  existJudgeTemplate.value = true
   if (curr.value === undefined) {
     if (name === 'solving_frameworks') {
       languageSolve.value = event;
@@ -713,7 +685,6 @@ const languageChangeHandler = (event, current, name) => {
 }
 
 const reviseJudgeTemplateHandler = (id, code, questionId, language) => {
-  console.log(id, code, questionId, language, existJudgeTemplate)
   Modal.confirm({
         title: '操作确认',
         content: '确认要保存修改的内容吗？',
@@ -721,7 +692,6 @@ const reviseJudgeTemplateHandler = (id, code, questionId, language) => {
           if (existJudgeTemplate.value === false) {
             addJudgeTemplate(questionId, languageId[language], code).then(response => {
               if (response.data.code === 200) {
-                console.log(response.data.data.judge_template_id)
                 current.value.judge_templates.push(
                     {
                       "id": response.data.data.judge_template_id,
@@ -775,6 +745,19 @@ const pageChange = pagination => {
 
 onBeforeMount(() => {
   pageChangeHandler(1, defaultPageSize)
+  allTags().then(response => {
+    const tags = response.data.data;
+    tags.forEach(tag => {
+      tagOptionsObject[tag.name] = tag.id;
+      tagOptions.push({'value': tag.name})
+    });
+  })
+  getLanguageList().then(response => {
+    const languageList = response.data.data;
+    languageList.forEach(language => {
+      languageId[language.name] = language.id
+    });
+  })
 })
 
 // 题目信息
@@ -822,7 +805,7 @@ const handleOk = (id) => {
     if (response.data.code === 200) {
       ReviseRevise(formState).then(response => {
         if (response.data.code === 200) {
-          const current =ref()
+          const current = ref()
           current.value = data.value.filter(item => item.id === id)[0]
           current.value.title = formState.title
           current.value.description = formState.description

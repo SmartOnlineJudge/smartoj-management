@@ -203,3 +203,11 @@ export const deleteQuestionTag = (question_tag_id) =>{
         }
     })
 }
+
+export const allTags = () =>{
+    return requests.get('/question/tags')
+}
+
+export const getLanguageList= ()=>{
+    return requests.get('/question/languages')
+}
