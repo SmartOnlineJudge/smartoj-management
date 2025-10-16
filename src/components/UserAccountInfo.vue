@@ -1,7 +1,7 @@
 <script setup>
 import {useUserStore} from "@/stores.js";
-import {reactive, ref, computed} from "vue";
-import {checkCode, updatePassword, verCode, updateEmail} from "@/request.js";
+import {reactive, ref} from "vue";
+import {checkVerifyCode, updatePassword, verifyCode, updateEmail} from "@/request.js";
 import {message} from "ant-design-vue";
 
 const userStore = useUserStore();
@@ -34,115 +34,98 @@ const dataSource = [
   }
 ]
 
-const open = ref(false);
-const codeSentTime = ref(null);
 const currentAction = ref('');
-const formRef = ref();
-
-const formState = reactive({
-  newpassword: '',
-  newEmail: '',
-  verification_code: '',
-  recipient: user['email']
-});
-
-const isSendDisabled = computed(() => {
-  return currentAction.value === 'password'
-      ? !formState.newpassword
-      : !formState.newEmail;
-});
-
-const isSubmitDisabled = computed(() => {
-  if (currentAction.value === 'password') {
-    return !(formState.newpassword && formState.verification_code);
-  } else {
-    return !(formState.newEmail && formState.verification_code);
-  }
-});
 
 const updateInfo = (key) => {
   currentAction.value = key;
-  open.value = true;
+  openEmailVerification.value = true;
 }
 
-const resetForm = () => {
-  formRef.value?.resetFields();
-};
+//验证邮箱
+const openEmailVerification = ref(false)
+const verifyEmailCode = ref(null)
 
-const Send = () => {
-  verCode(formState.recipient).then(response => {
+//发送验证码
+const sendVerifyCode = (code) => {
+  verifyCode(code).then(response => {
     if (response.data.code === 200) {
-      codeSentTime.value = Date.now();
-      message.success(`验证码已发送`);
-    } else if (response.data.code === 235) {
-      message.error("邮箱不能为空");
+      message.success(response.data.message);
     } else {
-      message.error("请求过于频繁");
+      message.error(response.data.message);
     }
   }).catch(() => {
     message.error("请求失败");
   });
 }
 
+//检验验证码
+const verifyEmailHandle = (code) => {
+  checkVerifyCode(code).then(response => {
+    if (response.data.code === 200) {
+      message.success(response.data.message);
+      openEmailVerification.value = false;
+      openUpdating.value = true;
+      verifyEmailCode.value= null;
+    } else {
+      message.error(response.data.message);
+    }
+  }).catch(()=>{
+    message.error("请求失败");
+  })
+}
+
+//修改邮箱、密码
+const formState = reactive({
+  newpassword: null,
+  newEmail: null,
+  confirmNewPassword: null,
+  confirmNewEmail: null,
+  updateVerifyEmailCode: null
+});
+const update = ref()
+const resetUpdating=()=>{
+  update.value.resetFields()
+}
+
+//修改密码
+const openUpdating = ref(false)
 const Update_Password = () => {
-  checkCode(formState.verification_code, formState.recipient).then(response => {
-    const currentTime = Date.now();
-    if (response.data.code === 200) {
-      updatePassword(formState.newpassword, formState.verification_code).then(response => {
-        if (response.data.code === 200) {
-          message.success(`密码修改成功`);
-          open.value = false;
-          resetForm();
-        } else {
-          handleVerificationError(currentTime);
-        }
-      }).catch(() => {
-        message.error("密码修改失败");
-      });
-    } else {
-      handleVerificationError(currentTime);
-    }
-  }).catch(() => {
-    message.error("请求失败");
-  });
-}
-
-const Update_Email = () => {
-  checkCode(formState.verification_code, formState.recipient).then(response => {
-    const currentTime = Date.now();
-    if (response.data.code === 200) {
-      updateEmail(formState.newEmail, formState.verification_code).then(response => {
-        if (response.data.code === 200) {
-          message.success(`邮箱修改成功`);
-          userStore.user.email = formState.newEmail; // 更新store中的邮箱
-          open.value = false;
-          resetForm();
-        } else {
-          handleVerificationError(currentTime);
-        }
-      }).catch(() => {
-        message.error("邮箱修改失败");
-      });
-    } else {
-      handleVerificationError(currentTime);
-    }
-  }).catch(() => {
-    message.error("请求失败");
-  });
-}
-
-const handleVerificationError = (currentTime) => {
-  if (currentTime - codeSentTime.value > 300000) {
-    message.error("验证码已过期");
-  } else {
-    message.error("验证码错误");
+  if (formState.newpassword !== formState.confirmNewPassword) {
+    message.error("两次输入的密码不一致");
+    return;
   }
+  updatePassword(formState.newpassword, verifyEmailCode.value).then(response => {
+    if (response.data.code === 200) {
+      message.success(response.data.message);
+    } else {
+      message.error(response.data.message);
+    }
+  }).catch(() => {
+    message.error("请求失败");
+  }).finally(() => {
+    openUpdating.value = false;
+  })
 }
 
-const handleCancel = () => {
-  open.value = false;
-  resetForm();
-};
+//修改邮箱
+const Update_Email = () => {
+  if (formState.newEmail !== formState.confirmNewEmail) {
+    message.error("两次输入的邮箱不一致");
+    return;
+  }
+  updateEmail(formState.newEmail, formState.updateVerifyEmailCode).then(response => {
+    if (response.data.code === 200) {
+      message.success(response.data.message);
+    } else {
+      message.error(response.data.message);
+    }
+  }).catch(() => {
+    message.error("请求失败");
+  }).finally(() => {
+    openUpdating.value = false;
+  })
+}
+
 </script>
 
 <template>
@@ -166,22 +149,43 @@ const handleCancel = () => {
       </a-list-item>
     </template>
   </a-list>
-  <a-modal v-model:open="open"
-           :title="currentAction === 'password'?'修改密码': '修改邮箱'"
+<!--  验证当前邮箱  -->
+  <a-modal v-model:open="openEmailVerification"
+           title="验证邮箱"
            okText="提交"
            cancelText="取消"
            :closable="false"
-           :ok-button-props="{ disabled: isSubmitDisabled }"
-           @ok="currentAction === 'password'? Update_Password() : Update_Email()"
-           @cancel="() => handleCancel()"
+           :maskClosable="false"
+           style="width: 400px"
+           @ok="()=>{verifyEmailHandle(verifyEmailCode)}"
+           @cancel="()=>{verifyEmailCode=null}"
   >
-    <a-form :model="formState" ref="formRef">
+    <a-form>
+      <a-form-item label="邮箱">
+        {{ user['email'] }}
+      </a-form-item>
+      <a-form-item label="验证码">
+        <a-input v-model:value="verifyEmailCode" style="width: 130px;margin-right: 20px"/>
+        <a-button type="primary" @click="()=>{sendVerifyCode('')}">
+          发送验证码
+        </a-button>
+      </a-form-item>
+    </a-form>
+  </a-modal>
+<!--  修改邮箱、密码 -->
+  <a-modal v-model:open="openUpdating"
+           :title="currentAction === 'password'?'修改密码': '修改邮箱'"
+           okText="更换"
+           cancelText="取消"
+           :closable="false"
+           @ok="currentAction === 'password'? Update_Password() : Update_Email()"
+           @cancel="resetUpdating"
+  >
+    <a-form :model="formState" ref="update">
       <a-form-item
           :label="currentAction === 'password'?'新密码': '新邮箱'"
-          :name="currentAction === 'password'? 'newpassword' : 'newEmail'"
-          :rules="[currentAction === 'password'?
-          { required: true, message: '请输入密码!' }:
-          { required: true, message: '请输入新邮箱!' }]"
+          :name="currentAction === 'password'?'newpassword':'newEmail'"
+
       >
         <a-input-password
             v-if="currentAction === 'password'"
@@ -190,24 +194,20 @@ const handleCancel = () => {
         <a-input v-else v-model:value="formState.newEmail"/>
       </a-form-item>
       <a-form-item
-          label="收件邮箱"
-          name="recipient"
+          :label="currentAction === 'password'?'重复新密码': '重复新邮箱'"
+          :name="currentAction === 'password'?'confirmNewPassword':'confirmNewEmail'"
       >
-        <a-input v-model:value="formState.recipient"/>
+        <a-input-password
+            v-if="currentAction === 'password'"
+            v-model:value="formState.confirmNewPassword"
+        />
+        <a-input v-else v-model:value="formState.confirmNewEmail"/>
       </a-form-item>
-      <a-form-item
-          label="验证码"
-          name="verification_code"
-          :rules="[{ required: true, message: '请输入验证码!' }]"
-      >
-        <div style="display: flex; gap: 20px; width: 280px">
-          <a-input v-model:value="formState.verification_code"/>
-          <a-button type="primary"
-                    @click="Send"
-                    :disabled="isSendDisabled"
-          >发送验证码
-          </a-button>
-        </div>
+      <a-form-item v-if="currentAction === 'email'" label="验证码" name="updateVerifyEmailCode">
+        <a-input v-model:value="formState.updateVerifyEmailCode" style="width: 150px;margin-right: 20px"/>
+        <a-button type="primary" @click="()=>{sendVerifyCode(formState.newEmail)}">
+          发送验证码
+        </a-button>
       </a-form-item>
     </a-form>
   </a-modal>

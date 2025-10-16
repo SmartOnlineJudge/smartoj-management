@@ -87,11 +87,11 @@ export const updateEmail = (new_email, vfcode) => {
     )
 }
 
-export const verCode = (recipient) => {
+export const verifyCode = (recipient) => {
     return requests.post('/user/verification-code', {recipient: recipient})
 }
 
-export const checkCode = (vfcode, email) => {
+export const checkVerifyCode = (vfcode, email) => {
     return requests.post('/user/check-verification-code', {vfcode: vfcode, email: email})
 }
 
