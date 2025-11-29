@@ -19,8 +19,7 @@ export const getCurrentAdmin = () => {
 }
 
 export const updateAdminInfo = (name, profile) => {
-    return requests.put('/management/user',
-        {name: name, profile: profile})
+    return requests.put('/user', {name: name, profile: profile})
 }
 
 export const getUserList = (page, size) => {
