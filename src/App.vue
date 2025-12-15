@@ -128,7 +128,6 @@ import { userLogout, getCurrentAdmin } from "@/request.js";
 import { useUserStore } from "@/stores.js";
 
 let currentAdmin, timer
-const openDropdown = ref(false)
 const spinning = ref(true)
 const isLogin = ref(null)
 const checkFrequency = 4000  // 登录状态检查频率

@@ -1,18 +1,21 @@
 <template>
-  <a-table
-      :columns="columns"
-      :dataSource="data"
-      :loading="{spinning:spinning,tip:'页面加载中...'}"
-      :pagination="pagination"
-      :scroll="{ x: 'max-content' }"
-      @change="pageChange"
-  >
-    <template #bodyCell="{ column, record }">
-      <template v-if="column.key === 'operation'">
-        <a-button type="primary" danger @click="()=>{ForcedExit(record.session_id)}">强退</a-button>
+  <div class="user-cookie">
+    <h2>用户登录状态管理</h2>
+    <a-table
+        :columns="columns"
+        :dataSource="data"
+        :loading="{spinning:spinning,tip:'页面加载中...'}"
+        :pagination="pagination"
+        :scroll="{ x: 'max-content' }"
+        @change="pageChange"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'operation'">
+          <a-button type="primary" danger @click="()=>{ForcedExit(record.session_id)}">强退</a-button>
+        </template>
       </template>
-    </template>
-  </a-table>
+    </a-table>
+  </div>
 </template>
 
 <script setup>
@@ -21,7 +24,7 @@ import {getUserStatus, userForcedExit} from "@/request.js";
 import {message, Modal} from "ant-design-vue";
 
 const spinning = ref(true)
-const defaultPageSize = 5
+const defaultPageSize = 10
 const total = ref()
 const data = ref([])
 const pagination = reactive({
@@ -130,3 +133,11 @@ onBeforeMount(() => {
 })
 
 </script>
+
+<style scoped>
+.user-cookie {
+  background-color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+}
+</style>

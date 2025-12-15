@@ -1,70 +1,73 @@
 <template>
-  <a-table
-      :columns="columns"
-      :dataSource="data"
-      :loading="{spinning:spinning,tip:'页面加载中...'}"
-      :pagination="pagination"
-      @change="pageChange"
-  >
-    <template #bodyCell="{ column, record }">
-      <template v-if="column.key === 'details'">
-        <a-button type="primary" @click="() => {open = true;current = record}">more</a-button>
-        <a-modal v-model:open="open" :style="{ top: '40px',width:'900px' }"
-                 :maskStyle="{backgroundColor: 'rgba(30, 30, 30, 0.2)'}">
-          <template #footer>
-            <a-button type="primary" @click="handleOk">OK</a-button>
-          </template>
-          <a-descriptions
-              title="用户详情"
-              bordered
-          >
-            <a-descriptions-item label="头像" >
-              <a-avatar :size="55" :src="MINIO_URL + current.avatar"/>
-            </a-descriptions-item>
-            <a-descriptions-item label="ID">
-              {{ current.id }}
-            </a-descriptions-item>
-            <a-descriptions-item label="名字">
-              {{ current.name }}
-            </a-descriptions-item>
-            <a-descriptions-item label="GitHub Token" :span="1.5">
-              {{ current.github_token }}
-            </a-descriptions-item>
-            <a-descriptions-item label="QQ Token" :span="1.5">
-              {{ current.qq_token }}
-            </a-descriptions-item>
-            <a-descriptions-item label="是否是超级管理员" :span="3">
-              {{ current.is_superuser }}
-            </a-descriptions-item>
-            <a-descriptions-item label="邮箱">
-              {{ current.email }}
-            </a-descriptions-item>
-            <a-descriptions-item label="等级">
-              {{ current.grade }}
-            </a-descriptions-item>
-            <a-descriptions-item label="经验值">
-              {{ current.experience }}
-            </a-descriptions-item>
-            <a-descriptions-item label="用户简介">
-              {{ current.profile }}
-            </a-descriptions-item>
-          </a-descriptions>
-        </a-modal>
+  <div class="user-info-list">
+    <h2>用户信息列表</h2>
+    <a-table
+        :columns="columns"
+        :dataSource="data"
+        :loading="{spinning:spinning,tip:'页面加载中...'}"
+        :pagination="pagination"
+        @change="pageChange"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'details'">
+          <a-button type="primary" @click="() => {open = true;current = record}">more</a-button>
+          <a-modal v-model:open="open" :style="{ top: '40px',width:'900px' }"
+                  :maskStyle="{backgroundColor: 'rgba(30, 30, 30, 0.2)'}">
+            <template #footer>
+              <a-button type="primary" @click="handleOk">OK</a-button>
+            </template>
+            <a-descriptions
+                title="用户详情"
+                bordered
+            >
+              <a-descriptions-item label="头像" >
+                <a-avatar :size="55" :src="MINIO_URL + current.avatar"/>
+              </a-descriptions-item>
+              <a-descriptions-item label="ID">
+                {{ current.id }}
+              </a-descriptions-item>
+              <a-descriptions-item label="名字">
+                {{ current.name }}
+              </a-descriptions-item>
+              <a-descriptions-item label="GitHub Token" :span="1.5">
+                {{ current.github_token }}
+              </a-descriptions-item>
+              <a-descriptions-item label="QQ Token" :span="1.5">
+                {{ current.qq_token }}
+              </a-descriptions-item>
+              <a-descriptions-item label="是否是超级管理员" :span="3">
+                {{ current.is_superuser }}
+              </a-descriptions-item>
+              <a-descriptions-item label="邮箱">
+                {{ current.email }}
+              </a-descriptions-item>
+              <a-descriptions-item label="等级">
+                {{ current.grade }}
+              </a-descriptions-item>
+              <a-descriptions-item label="经验值">
+                {{ current.experience }}
+              </a-descriptions-item>
+              <a-descriptions-item label="用户简介">
+                {{ current.profile }}
+              </a-descriptions-item>
+            </a-descriptions>
+          </a-modal>
+        </template>
+        <template v-else-if="column.key === 'avatar'">
+          <a-avatar :size="50" :src="MINIO_URL + record.avatar"/>
+        </template>
+        <template v-else-if="column.key === 'is_deleted'">
+          <a-switch
+              :checked="record.is_deleted"
+              :loading="record.loading"
+              checked-children="是"
+              un-checked-children="否"
+              @click="()=> {lapse(record)}"
+          />
+        </template>
       </template>
-      <template v-else-if="column.key === 'avatar'">
-        <a-avatar :size="50" :src="MINIO_URL + record.avatar"/>
-      </template>
-      <template v-else-if="column.key === 'is_deleted'">
-        <a-switch
-            :checked="record.is_deleted"
-            :loading="record.loading"
-            checked-children="是"
-            un-checked-children="否"
-            @click="()=> {lapse(record)}"
-        />
-      </template>
-    </template>
-  </a-table>
+    </a-table>
+  </div>
 </template>
 
 <script setup>
@@ -73,7 +76,7 @@ import {getUserList, userLapse} from "@/request.js";
 import {message, Modal} from "ant-design-vue";
 
 const MINIO_URL = import.meta.env.VITE_MINIO_URL
-const defaultPageSize = 5
+const defaultPageSize = 10
 const current = ref({})
 const open = ref(false);
 const spinning = ref(true)
@@ -175,5 +178,12 @@ const pageChange = pagination => {
 onBeforeMount(() => {
   pageChangeHandler(1, defaultPageSize)
 })
-
 </script>
+
+<style scoped>
+.user-info-list {
+  background-color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+}
+</style>

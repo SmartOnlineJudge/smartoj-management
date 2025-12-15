@@ -169,35 +169,35 @@ export const addSolvingFramework = (code_framework,language_id,question_id) => {
     })
 }
 
-export const reviseSolvingFramework = (id,code)=>{
+export const reviseSolvingFramework = (id, code)=> {
     return requests.put('/question/solving-framework',{
         id:id,
         code_framework:code
     })
 }
 
-export const addJudgeTemplate = (question_id,language_id,code) =>{
+export const addJudgeTemplate = (question_id, language_id, code) => {
     return requests.post('/question/judge-template',{
         question_id: question_id,
         language_id: language_id,
         code: code
     })
 }
-export const reviseJudgeTemplate = (id,code)=>{
-    return requests.put('/question/judge-template',{
+export const reviseJudgeTemplate = (id, code)=>{
+    return requests.put('/question/judge-template', {
         id:id,
         code:code
     })
 }
-export const addQuestionTag = (question_id,tag_id) =>{
-    return requests.post('/question/question-tag',{
+export const addQuestionTag = (question_id, tag_id) => {
+    return requests.post('/question/question-tag', {
         question_id: question_id,
         tag_id: tag_id
     })
 }
-export const deleteQuestionTag = (question_tag_id) =>{
-    return requests.delete('/question/question-tag',{
-        data:{
+export const deleteQuestionTag = (question_tag_id) => {
+    return requests.delete('/question/question-tag', {
+        data: {
             question_tag_id: question_tag_id
         }
     })

@@ -1,6 +1,13 @@
 <template>
-  <a-button type="primary"
-            @click="()=>{addQuestionData.openAddQuestion=true}">+增加
+  <a-button 
+    type="primary"
+    @click="() => { addQuestionData.openAddQuestion = true }"
+    style="margin-bottom: 10px;"
+  >
+    <template #icon>
+      <PlusCircleOutlined />
+    </template>
+    增加
   </a-button>
   <a-table
       :columns="columns"
@@ -29,11 +36,11 @@
     </template>
   </a-table>
   <a-drawer
-      v-model:open="open"
-      width="950"
-      :closable=false
-      :maskStyle="{backgroundColor: 'rgba(30, 30, 30, 0.2)'}"
-      :footer-style="{ textAlign: 'right' }"
+    v-model:open="open"
+    width="75%"
+    :closable=false
+    :maskStyle="{backgroundColor: 'rgba(30, 30, 30, 0.2)'}"
+    :footer-style="{ textAlign: 'right' }"
   >
     <div>
       <h3>题目信息概览</h3>
@@ -62,27 +69,31 @@
     </div>
     <div>
       <h3>题目描述</h3>
-      <v-md-editor v-model="current.description" :include-level="[1, 2, 3, 4]" height="400px"></v-md-editor>
+      <v-md-editor v-model="current.description" :include-level="[1, 2, 3, 4]" height="500px"></v-md-editor>
     </div>
     <div>
       <h3>测试用例</h3>
-      <a-button type="primary" style="margin-bottom: 8px"
-                @click="()=>{addTestData.openAddTest=true;addTestData.id=currentId}">+增加
+      <a-button 
+        type="primary" 
+        style="margin-bottom: 8px"
+        @click="()=>{addTestData.openAddTest=true;addTestData.id=currentId}"
+      >
+        <template #icon>
+          <PlusCircleOutlined />
+        </template>
+          增加
       </a-button>
-      <a-modal v-model:open="addTestData.openAddTest" title="增加测试用例" @ok="()=>{addTestHandler(addTestData)}"
-               @cancel="()=>{addTestData.testData=''}">
-        <a-form
-            :model="addTestData"
-        >
-          <a-form-item
-              label="题目编号"
-          >
+      <a-modal 
+        v-model:open="addTestData.openAddTest" 
+        title="增加测试用例" 
+        @ok="()=>{addTestHandler(addTestData)}"
+        @cancel="()=>{addTestData.testData=''}"
+      >
+        <a-form :model="addTestData">
+          <a-form-item label="题目编号">
             {{ addTestData.id }}
           </a-form-item>
-
-          <a-form-item
-              label="测试数据"
-          >
+          <a-form-item label="测试数据">
             <a-textarea v-model:value="addTestData.testData" :rows="4"/>
           </a-form-item>
         </a-form>
@@ -94,6 +105,7 @@
                 v-if="editableDataTest[record.id]"
                 v-model:value="editableDataTest[record.id][column.dataIndex]"
                 style="margin: -5px 0"
+                auto-size
             />
           </template>
           <template v-if="column.key === 'test_operation'">
@@ -115,9 +127,15 @@
     </div>
     <div>
       <h3>内存时间限制</h3>
-      <a-button type="primary" style="margin-bottom: 8px"
-                @click="()=>{addMemoryTimeLimitData.openAddMemoryTimeLimit=true;addMemoryTimeLimitData.question_id=currentId}">
-        +增加
+      <a-button 
+        type="primary" 
+        style="margin-bottom: 8px"
+        @click="()=>{addMemoryTimeLimitData.openAddMemoryTimeLimit=true;addMemoryTimeLimitData.question_id=currentId}"
+      >
+        <template #icon>
+          <PlusCircleOutlined />
+        </template>
+        增加
       </a-button>
       <a-modal v-model:open="addMemoryTimeLimitData.openAddMemoryTimeLimit"
                title="增加内存时间限制"
@@ -172,77 +190,84 @@
     </div>
     <div>
       <h3>解题框架</h3>
-      <div style="margin-bottom: 5px">
+      <div style="margin-bottom: 5px;display: flex;">
         <span style="font-size:15px">编程语言：</span>
         <span>
-          <a-select v-model:value="languageSolve"
-                    @change=" event => {languageChangeHandler(event,current.solving_frameworks,'solving_frameworks')}"
-                    size="small"
-                    style="width: 100px"
+          <a-select 
+            v-model:value="languageSolve"
+            @change="event => {languageChangeHandler(event,current.solving_frameworks,'solving_frameworks')}"
+            size="small"
+            style="width: 100px"
           >
-            <option v-for="(_,value) in languageId"
-                    :value=value>{{
-                value
-              }}
+            <option 
+                v-for="(_,value) in languageId"
+                :value=value
+              >
+              {{ value }}
             </option>
           </a-select>
         </span>
-        <span style="margin-left: 550px">
-            <a-button type="link"
-                      @click="reviseSolvingFrameworkHandler(idSolvingFramework,codeSolve,currentId,languageSolve)">
+        <span style="margin-left: auto">
+            <a-button 
+              type="link"
+              @click="reviseSolvingFrameworkHandler(idSolvingFramework,codeSolve,currentId,languageSolve)"
+            >
               保存
             </a-button>
         </span>
       </div>
       <MonacoEditor
-          v-model:code="codeSolve"
-          v-model:language="languageSolve"
-          :theme="theme"
-          fontSize="16px"
-          style="border: 1px solid black"
+        v-model:code="codeSolve"
+        v-model:language="languageSolve"
+        :theme="theme"
+        fontSize="16px"
+        class="code-editor"
       />
     </div>
     <div>
       <h3>判题模板</h3>
-      <div style="margin-bottom: 5px">
+      <div style="margin-bottom: 5px;display: flex;">
         <span style="font-size:15px">编程语言：</span>
         <span>
           <a-select v-model:value="languageJudge"
-                    @change=" event => {languageChangeHandler(event,current.judge_templates,'judge_template')}"
-                    size="small"
-                    style="width: 100px"
+            @change=" event => {languageChangeHandler(event,current.judge_templates,'judge_template')}"
+            size="small"
+            style="width: 100px"
           >
-            <option v-for="(_,value) in languageId"
-                    :value=value>{{
-                value
-              }}
+            <option 
+              v-for="(_,value) in languageId"
+              :value=value
+            >
+              {{ value }}
             </option>
           </a-select>
         </span>
-        <span style="margin-left: 550px">
-            <a-button type="link"
-                      @click="reviseJudgeTemplateHandler(idJudgeTemplate,codeJudge,currentId,languageJudge)">
+        <span style="margin-left: auto">
+            <a-button 
+              type="link"
+              @click="reviseJudgeTemplateHandler(idJudgeTemplate,codeJudge,currentId,languageJudge)"
+            >
               保存
             </a-button>
         </span>
       </div>
       <MonacoEditor
-          v-model:code="codeJudge"
-          v-model:language="languageJudge"
-          :theme="theme"
-          fontSize="16px"
-          style="border: 1px solid black;"
+        v-model:code="codeJudge"
+        v-model:language="languageJudge"
+        :theme="theme"
+        fontSize="16px"
+        class="code-editor"
       />
     </div>
     <template #footer>
-      <a-button type="primary" @click="()=>{open = false;data.filter(item=>item.id ===currentId)[0]=current}">确定
-      </a-button>
+      <a-button 
+        type="primary" 
+        @click="() => { open = false;data.filter(item => item.id === currentId)[0] = current }"
+      >确定</a-button>
     </template>
   </a-drawer>
-  <a-modal v-model:open="openRevise" :width="800" @ok="()=>{handleOk(currentRevise.id)}">
-    <a-form
-        :model="formState"
-    >
+  <a-modal v-model:open="openRevise" width="75%" @ok="()=>{handleOk(currentRevise.id)}">
+    <a-form :model="formState">
       <a-form-item label="题目ID" name="id">
         <span>{{ currentRevise.id }}</span>
       </a-form-item>
@@ -250,9 +275,11 @@
         <a-input v-model:value="formState.title" allow-clear/>
       </a-form-item>
       <a-form-item label="是否删除">
-        <a-switch v-model:checked="formState.is_deleted"
-                  checked-children="是"
-                  un-checked-children="否"/>
+        <a-switch 
+          v-model:checked="formState.is_deleted"
+          checked-children="是"
+          un-checked-children="否"
+        />
       </a-form-item>
       <a-form-item label="题目难度" name="difficulty">
         <a-radio-group v-model:value="formState.difficulty">
@@ -262,15 +289,15 @@
         </a-radio-group>
       </a-form-item>
       <a-form-item label="题目描述" name="description">
-         <v-md-editor v-model="formState.description" :include-level="[1, 2, 3, 4]" height="300px"></v-md-editor>
+         <v-md-editor v-model="formState.description" :include-level="[1, 2, 3, 4]" height="400px"></v-md-editor>
       </a-form-item>
     </a-form>
   </a-modal>
   <a-modal v-model:open="addQuestionData.openAddQuestion"
-           :width="700"
-           title="添加题目"
-           :footer="null"
-           @cancel="()=>{addQuestionData.openAddQuestion = false;addQuestionFrom.resetFields()}"
+    width="70%"
+    title="添加题目"
+    :footer="null"
+    @cancel="()=>{ addQuestionData.openAddQuestion = false;addQuestionFrom.resetFields() }"
   >
     <a-form
         ref="addQuestionFrom"
@@ -323,8 +350,9 @@ import {
   getLanguageList
 } from "@/request.js";
 import MonacoEditor from "../../components/MonacoEditor.vue";
-import {message, Modal} from "ant-design-vue";
-import {cloneDeep} from 'lodash-es';
+import { message, Modal } from "ant-design-vue";
+import { PlusCircleOutlined } from '@ant-design/icons-vue';
+import { cloneDeep } from 'lodash-es';
 
 const open = ref(false);
 const data = ref([])
@@ -332,13 +360,14 @@ const dataSourceTest = ref([])
 const dataSourceMemory = ref([])
 const inforCurrent = ref()
 const current = ref({})
-const defaultPageSize = 5
+const defaultPageSize = 10
 const spinning = ref(true)
 
 const total = ref()
 const pagination = reactive({
   total: total,
   pageSize: defaultPageSize,
+  showSizeChanger: false
 })
 const columns = [
   {
@@ -593,13 +622,13 @@ const addMemoryTimeLimitHandler = (addMemoryTimeLimitData) => {
 }
 
 
-//解题框架、判题模块
-const languageSolve = ref();
+// 解题框架、判题模块
+const languageSolve = ref("python");
 const theme = "vs"
 const codeSolve = ref();
 const idSolvingFramework = ref();
 const codeJudge = ref();
-const languageJudge = ref();
+const languageJudge = ref("python");
 const existSolvingFramework = ref()
 const existJudgeTemplate = ref()
 const idJudgeTemplate = ref()
@@ -867,5 +896,10 @@ const delQuestion = (checked, record) => {
 <style scoped>
 .editable-row-operations a {
   margin-right: 8px;
+}
+.code-editor {
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  padding: 10px 0;
 }
 </style>
