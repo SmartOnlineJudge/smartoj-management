@@ -14,6 +14,7 @@
       :dataSource="data"
       :loading="{spinning:spinning,tip:'页面加载中...'}"
       :pagination="pagination"
+      :rowSelection="{ onChange: (_, _selectedRows) => { selectedRows = _selectedRows } }"
       @change="pageChange"
   >
     <template #bodyCell="{ column, record }">
@@ -358,10 +359,10 @@ const open = ref(false);
 const data = ref([])
 const dataSourceTest = ref([])
 const dataSourceMemory = ref([])
-const inforCurrent = ref()
 const current = ref({})
 const defaultPageSize = 10
 const spinning = ref(true)
+const selectedRows = defineModel("selectedRows")
 
 const total = ref()
 const pagination = reactive({
@@ -601,15 +602,15 @@ const addMemoryTimeLimitHandler = (addMemoryTimeLimitData) => {
   addMemoryTimeLimit(addMemoryTimeLimitData).then(response => {
     if (response.data.code === 200) {
       dataSourceMemory.value.push(
-          {
-            "id": response.data.data.memory_time_limit_id,
-            "memory_limit": addMemoryTimeLimitData.memory_limit,
-            "time_limit": addMemoryTimeLimitData.time_limit,
-            "language": {
-              "id": addMemoryTimeLimitData.language_id,
-              "name": addMemoryTimeLimitData.language
-            }
-          })
+        {
+          "id": response.data.data.memory_time_limit_id,
+          "memory_limit": addMemoryTimeLimitData.memory_limit,
+          "time_limit": addMemoryTimeLimitData.time_limit,
+          "language": {
+            "id": addMemoryTimeLimitData.language_id,
+            "name": addMemoryTimeLimitData.language
+          }
+        })
       message.success(response.data.message)
     } else {
       message.error(response.data.message)
@@ -752,13 +753,13 @@ const reviseJudgeTemplateHandler = (id, code, questionId, language) => {
   )
 }
 
-//获取题目信息
+// 获取题目信息
 const pageChangeHandler = async (page, pageSize) => {
   spinning.value = true
   const response = await getQuestions(page, pageSize)
-  data.value = response.data.data.results
+  const results = response.data.data.results
+  data.value = results.map(item => ({ key: item.id, ...item }))
   total.value = response.data.data.total
-  inforCurrent.value = response.config.params.page
   spinning.value = false
 }
 
@@ -767,21 +768,32 @@ const pageChange = pagination => {
   currentPage.value= pagination.current
 }
 
-onBeforeMount(() => {
-  pageChangeHandler(1, defaultPageSize)
-  allTags().then(response => {
-    const tags = response.data.data;
-    tags.forEach(tag => {
-      tagOptionsObject[tag.name] = tag.id;
-      tagOptions.push({'value': tag.name})
-    });
-  })
-  getLanguageList().then(response => {
-    const languageList = response.data.data;
-    languageList.forEach(language => {
-      languageId[language.name] = language.id
-    });
-  })
+onBeforeMount(async () => {
+  // 并发执行三个请求，提高性能
+  const [pageResponse, tagsResponse, languageResponse] = await Promise.all([
+    getQuestions(1, defaultPageSize),
+    allTags(),
+    getLanguageList()
+  ]);
+  
+  // 处理题目列表数据
+  const results = pageResponse.data.data.results
+  data.value = results.map(item => ({ key: item.id, ...item }))
+  total.value = pageResponse.data.data.total
+  spinning.value = false
+  
+  // 处理标签数据
+  const tags = tagsResponse.data.data;
+  tags.forEach(tag => {
+    tagOptionsObject[tag.name] = tag.id;
+    tagOptions.push({'value': tag.name})
+  });
+  
+  // 处理语言列表数据
+  const languageList = languageResponse.data.data;
+  languageList.forEach(language => {
+    languageId[language.name] = language.id
+  });
 })
 
 // 题目信息

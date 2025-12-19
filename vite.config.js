@@ -5,6 +5,7 @@ import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import Components from 'unplugin-vue-components/vite';
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers';
+import prismjs from 'vite-plugin-prismjs';
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -22,6 +23,9 @@ export default defineConfig(({ command, mode }) => {
           }),
         ],
       }),
+      prismjs({
+        languages: ['python', 'java', 'c', 'cpp', 'go', 'javascript', "json", "bash"],
+      }),
     ],
     resolve: {
       alias: {
@@ -37,6 +41,12 @@ export default defineConfig(({ command, mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, ''),
         },
+        "/ai-service": {
+          target: env.VITE_AI_SERVICE_BACKEND_URL,
+          secure: false,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/ai-service/, ''),
+        }
       },
     },
   };

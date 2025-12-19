@@ -4,6 +4,10 @@ export const requests = axios.create({
     baseURL: '/api',
     withCredentials: true
 })
+export const aiRequests = axios.create({
+    baseURL: '/ai-service',
+    withCredentials: true
+})
 
 
 export const adminLogin = (email, password) => {
@@ -209,4 +213,43 @@ export const allTags = () =>{
 
 export const getLanguageList= ()=>{
     return requests.get('/question/languages')
+}
+
+export const chatWithQuestionManageAgent = (query, threadID) => {
+    const data = { query }
+    if (threadID && threadID !== "") data["thread_id"] = threadID;
+    return aiRequests.post('/chat/question-manage', data)
+}
+
+export const interruptConversation = threadID => {
+    return aiRequests.post("/chat/interrupt", { thread_id: threadID })
+}
+
+export const getConversation = threadID => {
+    return aiRequests.get("/conversation", { params: { thread_id: threadID } })
+}
+
+export const getConversationHistory = () => {
+    return aiRequests.get("/conversation/list")
+}
+
+export const getConversationDetail = threadID => {
+    return aiRequests.get(
+        "/conversation/detail/question-manage", 
+        { params: { thread_id: threadID } }
+    )
+}
+
+export const modifyConversationTitle = (threadID, title) => {
+    return aiRequests.patch(
+        "/conversation",
+        { thread_id: threadID, title: title }
+    )
+}
+
+export const deleteConversation = threadID => {
+    return aiRequests.delete(
+        "/conversation",
+        { data: { thread_id: threadID } }
+    )
 }
