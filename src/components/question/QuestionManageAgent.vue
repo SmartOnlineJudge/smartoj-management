@@ -328,9 +328,7 @@ const senderTitle = h(Space, {}, () => {
 const updateConversationTitle = async () => {
   const conversationResponse = await getConversation(currentThreadID.value)
   const newTitle = conversationResponse.data.conversation.title
-  for (let i = 0; i < newTitle.length; i++) {
-    conversationTitle.value += newTitle[i]
-  }
+  conversationTitle.value = newTitle
 }
 const askAgent = async query => {
   try {
