@@ -78,7 +78,7 @@
           </a-menu-item>
         </a-menu>
       </a-layout-sider>
-      <a-layout-content style="padding: 20px 25px">
+      <a-layout-content style="padding: 15px">
         <RouterView/>
       </a-layout-content>
     </a-layout>
@@ -96,8 +96,6 @@ import {
   DashboardOutlined,
   UserOutlined,
   CodeOutlined,
-  CommentOutlined,
-  CarryOutOutlined,
   LogoutOutlined,
   IdcardOutlined
 } from "@ant-design/icons-vue";
