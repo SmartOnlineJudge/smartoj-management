@@ -211,6 +211,30 @@ export const allTags = () =>{
     return requests.get('/question/tags')
 }
 
+export const createTag = (name, score) => {
+    return requests.post('/management/tag', {
+        name: name, 
+        score: score
+    })
+}
+
+export const updateTag = (tag_id, name, score) => {
+    return requests.put('/management/tag', {
+        tag_id: tag_id,
+        name: name,
+        score: score
+    })
+}
+
+export const deleteTag = (tag_id, is_deleted) => {
+    return requests.delete('/management/tag', {
+        data: {
+            tag_id: tag_id,
+            is_deleted: is_deleted
+        }
+    })
+}
+
 export const getLanguageList= ()=>{
     return requests.get('/question/languages')
 }

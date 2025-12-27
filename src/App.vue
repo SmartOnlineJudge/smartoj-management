@@ -130,7 +130,7 @@ import { useUserStore } from "@/stores.js";
 let currentAdmin, timer
 const spinning = ref(true)
 const isLogin = ref(null)
-const checkFrequency = 4000  // 登录状态检查频率
+const checkFrequency = 1000 * 60 * 10  // 登录状态检查频率
 const MINIO_URL = import.meta.env.VITE_MINIO_URL
 const userStore = useUserStore();
 
