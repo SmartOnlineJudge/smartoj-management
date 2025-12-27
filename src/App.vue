@@ -69,26 +69,6 @@
               </span>
             </template>
             <a-menu-item key="/question/question-info">题目信息管理</a-menu-item>
-            <a-menu-item key="/question/daily-question">每日一题管理</a-menu-item>
-            <a-menu-item key="/question/solved-history">刷题记录管理</a-menu-item>
-          </a-sub-menu>
-          <a-sub-menu key="solving">
-            <template #title>
-              <span>
-                <CarryOutOutlined />
-                <span>题解管理</span>
-              </span>
-            </template>
-            <a-menu-item key="9">option9</a-menu-item>
-          </a-sub-menu>
-          <a-sub-menu key="communication">
-            <template #title>
-              <span>
-                <CommentOutlined />
-                <span>讨论管理</span>
-              </span>
-            </template>
-            <a-menu-item key="10">option9</a-menu-item>
           </a-sub-menu>
           <a-menu-item key="/user-center">
             <span>
@@ -130,7 +110,7 @@ import { useUserStore } from "@/stores.js";
 let currentAdmin, timer
 const spinning = ref(true)
 const isLogin = ref(null)
-const checkFrequency = 1000 * 60 * 10  // 登录状态检查频率
+const checkFrequency = 5000  // 登录状态检查频率
 const MINIO_URL = import.meta.env.VITE_MINIO_URL
 const userStore = useUserStore();
 

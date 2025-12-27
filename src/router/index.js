@@ -25,16 +25,6 @@ const router = createRouter({
       component: () => import('../pages/question/QuestionInfo.vue')
     },
     {
-      path: '/question/solved-history',
-      name: 'solved-history',
-      component: () => import('../pages/question/SolvedHistory.vue')
-    },
-    {
-      path: '/question/daily-question',
-      name: 'daily-question',
-      component: () => import('../pages/question/DailyQuestion.vue')
-    },
-    {
       path: '/user-center',
       name: 'user-center',
       component: () => import('../pages/UserCenter.vue')
