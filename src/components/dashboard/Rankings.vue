@@ -89,47 +89,18 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
+import { 
+  getRankingByScore, 
+  getRankingByCommentCount, 
+  getRankingBySolutionCount, 
+  getPopularQuestions
+} from "@/request";
 
 const MINIO_URL = import.meta.env.VITE_MINIO_URL
 const scoreRanking = ref([]);
 const commentRanking = ref([]);
 const solutionRanking = ref([]);
 const questionRanking = ref([]);
-
-// 初始化伪造数据
-const initFakeData = () => {
-  // 高分用户榜数据
-  scoreRanking.value = [
-    { id: 1, username: 'Alice', score: 9850, avatar: '/user-avatars/sOFQK2CZGNfIQVa6hgFKngTM8jp5u53h.jpg' },
-    { id: 2, username: 'Bob', score: 9720, avatar: '/user-avatars/sOFQK2CZGNfIQVa6hgFKngTM8jp5u53h.jpg' },
-    { id: 3, username: 'Charlie', score: 9560, avatar: '/user-avatars/sOFQK2CZGNfIQVa6hgFKngTM8jp5u53h.jpg' },
-    { id: 4, username: 'David', score: 9420, avatar: '/user-avatars/sOFQK2CZGNfIQVa6hgFKngTM8jp5u53h.jpg' },
-  ];
-
-  // 用户评论榜数据
-  commentRanking.value = [
-    { id: 11, username: 'Tom', commentCount: 128, avatar: '/user-avatars/sOFQK2CZGNfIQVa6hgFKngTM8jp5u53h.jpg' },
-    { id: 12, username: 'Jerry', commentCount: 112, avatar: '/user-avatars/sOFQK2CZGNfIQVa6hgFKngTM8jp5u53h.jpg' },
-    { id: 13, username: 'Alice', commentCount: 98, avatar: '/user-avatars/sOFQK2CZGNfIQVa6hgFKngTM8jp5u53h.jpg' },
-    { id: 14, username: 'Mike', commentCount: 87, avatar: '/user-avatars/sOFQK2CZGNfIQVa6hgFKngTM8jp5u53h.jpg' },
-  ];
-
-  // 用户题解榜数据
-  solutionRanking.value = [
-    { id: 21, username: 'Coder101', solutionCount: 86, avatar: '/user-avatars/sOFQK2CZGNfIQVa6hgFKngTM8jp5u53h.jpg' },
-    { id: 22, username: 'AlgorithmMaster', solutionCount: 79, avatar: '/user-avatars/sOFQK2CZGNfIQVa6hgFKngTM8jp5u53h.jpg' },
-    { id: 23, username: 'CodeNinja', solutionCount: 71, avatar: '/user-avatars/sOFQK2CZGNfIQVa6hgFKngTM8jp5u53h.jpg' },
-  ];
-
-  // 热门题目榜数据
-  questionRanking.value = [
-    { id: 1, title: '两数之和', submitCount: 12500 },
-    { id: 2, title: '三数之和', submitCount: 9800 },
-    { id: 3, title: '最长不重复子串', submitCount: 8700 },
-    { id: 4, title: '二叉树遍历', submitCount: 7600 },
-    { id: 5, title: '动态规划入门', submitCount: 6900 }
-  ];
-};
 
 // 根据排名返回特殊样式类
 const getRankClass = (index) => {
@@ -139,8 +110,44 @@ const getRankClass = (index) => {
   return '';
 };
 
-onMounted(() => {
-  initFakeData();
+onMounted(async () => {
+  const [scoreResponse, commentResponse, solutionResponse, questionResponse] = await Promise.all([
+    getRankingByScore(),
+    getRankingByCommentCount(),
+    getRankingBySolutionCount(),
+    getPopularQuestions()
+  ]);
+  scoreRanking.value = scoreResponse.data.data.results.map(item => {
+    return {
+      id: item.id,
+      username: item.user.user_dynamic.name,
+      score: item.total_score,
+      avatar: item.user.user_dynamic.avatar
+    };
+  })
+  commentRanking.value = commentResponse.data.data.results.map(item => {
+    return {
+      id: item.user_id,
+      username: item.name,
+      commentCount: item.comment_count,
+      avatar: item.avatar
+    };
+  })
+  solutionRanking.value = solutionResponse.data.data.results.map(item => {
+    return {
+      id: item.user_id,
+      username: item.name,
+      solutionCount: item.solution_count,
+      avatar: item.avatar
+    };
+  })
+  questionRanking.value = questionResponse.data.data.map(item => {
+    return {
+      id: item.id,
+      title: item.title,
+      submitCount: item.submission_quantity
+    };
+  });
 });
 </script>
 

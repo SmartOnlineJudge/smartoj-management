@@ -8,33 +8,13 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import VChart from 'vue-echarts';
 import 'echarts-wordcloud'; // 导入词云扩展
 
-const tagData = ref([
-  { name: '动态规划', value: 120 },
-  { name: '深度优先搜索', value: 85 },
-  { name: '广度优先搜索', value: 78 },
-  { name: '数组', value: 150 },
-  { name: '字符串', value: 110 },
-  { name: '树', value: 95 },
-  { name: '链表', value: 88 },
-  { name: '哈希表', value: 102 },
-  { name: '数学', value: 75 },
-  { name: '双指针', value: 68 },
-  { name: '回溯', value: 60 },
-  { name: '贪心', value: 72 },
-  { name: '二分查找', value: 80 },
-  { name: '栈', value: 55 },
-  { name: '堆', value: 48 },
-  { name: '图论', value: 70 },
-  { name: '排序', value: 90 },
-  { name: '设计', value: 45 },
-  { name: '数据库', value: 40 },
-  { name: 'Shell', value: 30 }
-]);
+import { allTags } from '@/request';
 
+const tagData = ref([]);
 // 生成词云图配置
 const chartOption = reactive({
   tooltip: {
@@ -70,9 +50,18 @@ const chartOption = reactive({
         shadowColor: '#333'
       }
     },
-    data: tagData.value
+    data: tagData
   }]
 });
+
+onMounted(async () => {
+  const response = await allTags(true);
+  const responseData = response.data.data;
+  tagData.value = responseData.map(item => ({
+    name: item.name,
+    value: item.question_count
+  }));
+})
 </script>
 
 <style scoped>

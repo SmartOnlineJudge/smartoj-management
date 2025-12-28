@@ -8,7 +8,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import VChart from 'vue-echarts';
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -18,6 +18,8 @@ import {
   TooltipComponent, 
   LegendComponent 
 } from 'echarts/components';
+
+import { getQuestionCountBydifficulty } from '@/request';
 
 // 注册ECharts组件
 use([
@@ -29,11 +31,7 @@ use([
 ]);
 
 // 题目数据
-const data = ref([
-  { name: "简单", value: 10 },
-  { name: "中等", value: 20 },
-  { name: "困难", value: 30 }
-]);
+const data = ref([]);
 
 // 饼图配置
 const chartOption = reactive({
@@ -69,10 +67,21 @@ const chartOption = reactive({
       labelLine: {
         show: true
       },
-      data: data.value
+      data: data
     }
   ]
 });
+
+onMounted (async () => {
+  const response = await getQuestionCountBydifficulty();
+  const responseData = response.data.data;
+  const newData = [
+    { name: "简单", value: responseData.easy, itemStyle: { color:'#52c41a' } },
+    { name: "中等", value: responseData.medium, itemStyle: { color:'#faad14' } },
+    { name: "困难", value: responseData.hard, itemStyle: { color:'#ff4d4f' } }
+  ];
+   data.value = newData;
+})
 </script>
 
 <style scoped>

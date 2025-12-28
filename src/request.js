@@ -207,8 +207,11 @@ export const deleteQuestionTag = (question_tag_id) => {
     })
 }
 
-export const allTags = () =>{
-    return requests.get('/question/tags')
+export const allTags = (requireQuestionCount) =>{
+    if (requireQuestionCount === undefined) {
+        requireQuestionCount = false
+    }
+    return requests.get('/question/tags', { params: { require_question_count: requireQuestionCount } })
 }
 
 export const createTag = (name, score) => {
@@ -276,4 +279,44 @@ export const deleteConversation = threadID => {
         "/conversation",
         { data: { thread_id: threadID } }
     )
+}
+
+export const getDashboardUsers = () => {
+    return requests.get('/management/dashboard/users')
+}
+
+export const getDashboardSubmissions = () => {
+    return requests.get('/management/dashboard/submissions')
+}
+
+export const getDashboardSubmissionByHour = () => {
+    return requests.get('management/dashboard/submission-distribution-by-hour')
+}
+
+export const getDashboardSubmissionByLanguage = () => {
+    return requests.get('/management/dashboard/submission-distribution-by-language')
+}
+
+export const getDashboardConversationCount = () => {
+    return aiRequests.get('/conversation/count')
+}
+
+export const getRankingByScore = () => {
+    return requests.get('/management/dashboard/ranking/score')
+}
+
+export const getRankingByCommentCount = () => {
+    return requests.get('/management/dashboard/ranking/comment-count')
+}
+
+export const getRankingBySolutionCount = () => {
+    return requests.get('/management/dashboard/ranking/solution-count')
+}
+
+export const getPopularQuestions = () => {
+    return requests.get('/question/popular-questions')
+}
+
+export const getQuestionCountBydifficulty = () => {
+    return requests.get('/question/count-group-by-difficulty')
 }

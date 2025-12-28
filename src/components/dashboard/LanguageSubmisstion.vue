@@ -8,7 +8,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import VChart from 'vue-echarts';
 import { use } from 'echarts/core';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -19,6 +19,8 @@ import {
   LegendComponent 
 } from 'echarts/components';
 
+import { getDashboardSubmissionByLanguage, getLanguageList } from '@/request';
+
 // 注册ECharts组件
 use([
   CanvasRenderer,
@@ -28,14 +30,7 @@ use([
   LegendComponent
 ]);
 
-const languageData = ref([
-  { value: 0, name: 'C++' },
-  { value: 0, name: 'Python' },
-  { value: 0, name: 'Java' },
-  { value: 0, name: 'JavaScript' },
-  { value: 0, name: 'C' },
-  { value: 50, name: 'Go' },
-]);
+const languageData = ref([]);
 
 // 饼图配置
 const chartOption = reactive({
@@ -71,9 +66,26 @@ const chartOption = reactive({
       labelLine: {
         show: true
       },
-      data: languageData.value
+      data: languageData
     }
   ]
+});
+
+onMounted(async () => {
+  const [languageResponse, submissionResponse] = await Promise.all([getLanguageList(), getDashboardSubmissionByLanguage()]);
+  const languageResponseData = languageResponse.data.data;
+  const languageID2Name = {}
+  languageResponseData.forEach(item => {
+    languageID2Name[item.id] = item.name;
+  });
+  const submissionResponseData = submissionResponse.data.data.submission_distribution;
+  const newData = submissionResponseData.map(item => {
+    return {
+      value: item.count,
+      name: languageID2Name[item.language_id]
+    }
+  });
+  languageData.value = newData;
 });
 </script>
 

@@ -1,14 +1,17 @@
 <template>
   <div id="submission-distribution">
-    <v-chart 
-      :option="chartOption" 
-      style="width: 100%; height: 400px;" 
-      :autoresize="true"
-    />
+    <a-spin :spinning="spinning">
+      <v-chart 
+        :option="chartOption" 
+        style="width: 100%; height: 400px;" 
+        :autoresize="true"
+      />
+    </a-spin>
   </div>
 </template>
 
 <script setup>
+import { onMounted, ref } from "vue";
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
 import { BarChart } from "echarts/charts";
@@ -20,13 +23,17 @@ import {
 } from "echarts/components";
 import VChart from "vue-echarts";
 
+import { getDashboardSubmissionByHour } from "@/request";
+
 use([CanvasRenderer, BarChart, GridComponent, TooltipComponent, TitleComponent, DataZoomComponent]);
 
-// 生成24小时的模拟数据
+// 横轴数据
 const hoursData = Array.from({ length: 24 }, (_, i) => i + 1);
-const submissionData = Array.from({ length: 24 }, () => Math.floor(Math.random() * 100));
+// 使用响应式数据
+const seriesData = ref([])
+const spinning = ref(true);
 
-const chartOption = {
+const chartOption = ref({
   title: {
     text: "24小时提交总分布",
     left: "center",
@@ -63,7 +70,7 @@ const chartOption = {
       name: "提交数量",
       type: "bar",
       barWidth: "60%",
-      data: submissionData,
+      data: seriesData,
       itemStyle: {
         color: '#3185fc',
         borderRadius: {
@@ -73,7 +80,20 @@ const chartOption = {
       }
     },
   ],
-};
+});
+
+onMounted(async () => {
+  try {
+    const response = await getDashboardSubmissionByHour();
+    const responseData = response.data.data;
+    const result = responseData.submission_distribution;
+    seriesData.value = result.map(item => item.count);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    spinning.value = false;
+  }
+});
 </script>
 
 <style scoped>

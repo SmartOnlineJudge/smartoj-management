@@ -1,6 +1,6 @@
 <template>
   <div id="statistics">
-    <div v-for="item in data" class="item">
+    <div v-for="item in data" :key="item.id" class="item">
       <div class="statistics-icon">
         <component :is="item.icon" />
       </div>
@@ -13,31 +13,53 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { TeamOutlined, WifiOutlined, UploadOutlined, CommentOutlined } from '@ant-design/icons-vue';
 
-const data = [
+import { getDashboardUsers, getDashboardSubmissions, getDashboardConversationCount } from '@/request';
+
+const data = ref([
   {
+    id: 1,
     icon: TeamOutlined,
     title: '用户总数',
-    value: 1000
+    value: 0
   },
   {
+    id: 2,
     icon: WifiOutlined,
     title: '在线用户',
-    value: 1000
+    value: 0
   },
   {
+    id: 3,
     icon: UploadOutlined,
     title: '当日提交量',
-    value: 1000
+    value: 0
   },
   {
+    id: 4,
     icon: CommentOutlined,
     title: 'AI对话总数',
-    value: 1000
+    value: 0
   }
-]
+])
+
+onMounted(async () => {
+  try {
+    const [usersResponse, submissionsResponse, conversationsResponse] = await Promise.all([
+      getDashboardUsers(),
+      getDashboardSubmissions(),
+      getDashboardConversationCount()
+    ]);
+    data.value[0].value = usersResponse.data.data.total_users;
+    data.value[1].value = usersResponse.data.data.online_users;
+    data.value[2].value = submissionsResponse.data.data.submissions;
+    data.value[3].value = conversationsResponse.data.count;
+  } catch (error) {
+    console.error(error);
+  }
+})
 </script>
 
 <style scoped>
