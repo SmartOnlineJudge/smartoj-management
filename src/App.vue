@@ -90,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, onBeforeMount } from "vue"
+import { ref, onBeforeMount, defineAsyncComponent } from "vue"
 import { RouterView } from 'vue-router'
 import {
   DashboardOutlined,
@@ -101,10 +101,10 @@ import {
 } from "@ant-design/icons-vue";
 import { message, Modal } from 'ant-design-vue';
 import router from "@/router/index.js";
-import Login from "@/pages/Login.vue";
 import { userLogout, getCurrentAdmin } from "@/request.js";
 import { useUserStore } from "@/stores.js";
 
+const Login = defineAsyncComponent(() => import("@/pages/Login.vue"));
 let currentAdmin, timer
 const spinning = ref(true)
 const isLogin = ref(null)

@@ -32,6 +32,21 @@ export default defineConfig(({ command, mode }) => {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            // 将大型库分离到单独的chunk中
+            'monaco-editor': ['monaco-editor'],
+            'echarts': ['echarts', 'vue-echarts'],
+            'ant-design': ['ant-design-vue'],
+            'prismjs': ['vite-plugin-prismjs'],
+            // 将公共代码分离
+            vendor: ['vue', 'vue-router', 'pinia', 'axios']
+          }
+        }
+      },
+    },
     server: {
       host: '0.0.0.0',
       proxy: {
@@ -51,4 +66,3 @@ export default defineConfig(({ command, mode }) => {
     },
   };
 });
-

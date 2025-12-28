@@ -12,13 +12,15 @@
 </template>
 
 <script setup> 
-import Statistics from '@/components/dashboard/Statistics.vue';
-import SubmissionDistribustion from '@/components/dashboard/SubmissionDistribustion.vue';
-import Rankings from '@/components/dashboard/Rankings.vue';
-import LanguageSubmisstion from '@/components/dashboard/LanguageSubmisstion.vue';
-import QuestionCountOfTag from '@/components/dashboard/QuestionCountOfTag.vue';
-import QuestionDistribution from '@/components/dashboard/QuestionDistribution.vue';
+import { defineAsyncComponent } from "vue"
 
+// 动态导入组件以实现代码分割
+const Statistics = defineAsyncComponent(() => import('@/components/dashboard/Statistics.vue'));
+const SubmissionDistribustion = defineAsyncComponent(() => import('@/components/dashboard/SubmissionDistribustion.vue'));
+const Rankings = defineAsyncComponent(() => import('@/components/dashboard/Rankings.vue'));
+const LanguageSubmisstion = defineAsyncComponent(() => import('@/components/dashboard/LanguageSubmisstion.vue'));
+const QuestionCountOfTag = defineAsyncComponent(() => import('@/components/dashboard/QuestionCountOfTag.vue'));
+const QuestionDistribution = defineAsyncComponent(() => import('@/components/dashboard/QuestionDistribution.vue'));
 </script>
 
 <style scoped>

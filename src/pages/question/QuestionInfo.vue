@@ -42,11 +42,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import QuestionManagement from '@/components/question/QuestionManagement.vue'
-import TagInfoManagement from '@/components/question/TagInfoManagement.vue'
-import LanguageManagement from '@/components/question/LanguageManagement.vue'
-import QuestionManageAgent from '@/components/question/QuestionManageAgent.vue'
+import { ref, computed, defineAsyncComponent } from 'vue'
+
+// 动态导入组件以实现代码分割
+const QuestionManagement = defineAsyncComponent(() => import('@/components/question/QuestionManagement.vue'))
+const TagInfoManagement = defineAsyncComponent(() => import('@/components/question/TagInfoManagement.vue'))
+const LanguageManagement = defineAsyncComponent(() => import('@/components/question/LanguageManagement.vue'))
+const QuestionManageAgent = defineAsyncComponent(() => import('@/components/question/QuestionManageAgent.vue'))
 
 const activeKey = ref('1')
 const isChatbotVisible = ref(false)
